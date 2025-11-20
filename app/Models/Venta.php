@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
+
+
 /**
  * Class Venta
  *
@@ -22,9 +28,10 @@ use Illuminate\Database\Eloquent\Model;
  * @package App
  * @mixin \Illuminate\Database\Eloquent\Builder
  */
-class Venta extends Model
+class Venta extends Authenticatable
 {
     
+    use HasFactory, Notifiable, HasRoles;   
     protected $perPage = 20;
 
     /**

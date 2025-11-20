@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
+
+
 /**
  * Class Categoria
  *
@@ -21,8 +27,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @package App\Models
  * @mixin \Illuminate\Database\Eloquent\Builder
  */
-class Categoria extends Model
+class Categoria extends Authenticatable
 {
+    use HasFactory, Notifiable, HasRoles;
     protected $perPage = 20;
 
     /**

@@ -8,8 +8,25 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Redirect;
 
+use App\Http\Controllers\Controller;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use DB;
+/* use Hash;
+use Illuminate\Support\Arr; */
+
+
+
 class ClienteController extends Controller
 {
+    function __construct()
+    {
+        $this->middleware('permission:ver-cliente|crear-cliente|editar-cliente|borrar-cliente', ['only' => ['index']]);
+        $this->middleware('permission:crear-cliente', ['only' => ['create','store']]);
+        $this->middleware('permission:editar-cliente', ['only' => ['edit','update']]);
+        $this->middleware('permission:borrar-cliente', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request): View
     {
         $clientes = Cliente::orderBy('created_at', 'desc')->paginate(10);
@@ -43,12 +60,16 @@ class ClienteController extends Controller
         }
     }
 
-    public function show(Cliente $cliente): View
+    public function show($id): View
     {
-        return view('cliente.show', compact('cliente'));
+        $cliente = Cliente::find($id);
+        $clientePermissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
+            ->where("role_has_permissions.role_id",$id)
+            ->get();
+        return view('clientes.show', compact('cliente','clientePermissions'));
     }
 
-    public function update(Request $request, Cliente $cliente): RedirectResponse
+    public function update(Request $request, $id): RedirectResponse
     {
         $request->validate([
             'ci' => 'required|max:20|unique:clientes,ci,' . $cliente->ci . ',ci',
@@ -63,6 +84,7 @@ class ClienteController extends Controller
         ]);
 
         try {
+            $cliente = Cliente::find($id); //agregado para obtener el cliente
             $cliente->update($request->all());
             return redirect()->route('clientes.index')
                 ->with('success', 'Cliente actualizado correctamente.');
@@ -74,9 +96,10 @@ class ClienteController extends Controller
         }
     }
 
-    public function destroy(Cliente $cliente): RedirectResponse
+    public function destroy($id): RedirectResponse
     {
         try {
+            $cliente = Cliente::find($id);
             $cliente->delete();
             return redirect()->route('clientes.index')
                 ->with('success', 'Cliente eliminado correctamente.');

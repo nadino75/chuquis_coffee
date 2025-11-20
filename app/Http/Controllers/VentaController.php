@@ -13,8 +13,21 @@ use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class VentaController extends Controller
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use App\Http\Controllers\Controller;
+
+
+class VentaController extends Controller  
 {
+    function __construct()
+    {
+        $this->middleware('permission:ver-venta|crear-venta|editar-venta|borrar-venta', ['only' => ['index']]);
+        $this->middleware('permission:crear-venta', ['only' => ['create','store']]);
+        $this->middleware('permission:editar-venta', ['only' => ['edit','update']]);
+        $this->middleware('permission:borrar-venta', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request): View
     {
         $ventas = Venta::with(['producto', 'cliente', 'pago'])
@@ -29,8 +42,8 @@ class VentaController extends Controller
     {
         $productos = Producto::where('stock', '>', 0)->get();
         $clientes = Cliente::all();
-        
-        return view('venta.create', compact('productos', 'clientes'));
+        $permission = Permission::get();
+        return view('venta.create', compact('productos', 'clientes', 'permission'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -162,8 +175,11 @@ class VentaController extends Controller
 
     public function show($id): View
     {
+        $ventaPermissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
+            ->where("role_has_permissions.role_id",$id)
+            ->get();
         $venta = Venta::with(['producto', 'cliente', 'pago'])->findOrFail($id);
-        return view('venta.show', compact('venta'));
+        return view('venta.show', compact('venta', 'ventaPermissions'));
     }
 
     public function destroy($id): RedirectResponse

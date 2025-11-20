@@ -5,9 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Producto extends Model
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
+
+
+class Producto extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
         'nombre', 
