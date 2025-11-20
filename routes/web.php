@@ -11,9 +11,10 @@ use App\Http\Controllers\VentaController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\ProveedoresProductoController;
 use App\Http\Controllers\ContactController; // Agregar este use si creas un controlador
+use App\Http\controllers\PagoController;
 
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\RoleController; 
+use App\Http\Controllers\RoleController;
 
 /*
 |--------------------------------------------------------------------------
