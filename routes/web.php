@@ -12,6 +12,9 @@ use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\ProveedoresProductoController;
 use App\Http\Controllers\ContactController; // Agregar este use si creas un controlador
 
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\RoleController; 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -55,4 +58,6 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('marcas', MarcaController::class);
     Route::resource('proveedores_productos', ProveedoresProductoController::class);
     Route::resource('pagos', PagoController::class);
+    Route::resource('roles', RoleController::class);
+    Route::resource('users', UserController::class);
 });
