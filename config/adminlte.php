@@ -352,6 +352,16 @@ return [
             'url' => 'ventas',
             'icon' => 'fas fa-shopping-cart',
         ],
+        [
+            'text' => 'Usuarios',
+            'url' => 'users',
+            'icon' => 'fas fa-shopping-cart',
+        ],
+        [
+            'text' => 'Roles',
+            'url' => 'roles',
+            'icon' => 'fas fa-shopping-cart',
+        ],
 
 
         ['header' => 'account_settings'],

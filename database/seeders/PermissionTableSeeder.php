@@ -48,6 +48,10 @@ class PermissionTableSeeder extends Seeder
             'crear-tipo',
             'editar-tipo',
             'borrar-tipo',
+            'ver-rol',
+            'crear-rol',
+            'editar-rol',
+            'borrar-rol'
         ];
         foreach ($Permissions as $permission) {
             Permission::create(['name' => $permission]);
