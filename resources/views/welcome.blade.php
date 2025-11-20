@@ -124,14 +124,6 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 15px rgba(218, 165, 32, 0.5);
         }
-        .testimonial {
-            background: #3e2723;
-            border-radius: 15px;
-            padding: 20px;
-            margin: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            color: #f8f9fa;
-        }
         .footer {
             background: linear-gradient(90deg, #1a1a1a, #3e2723);
             color: #f8f9fa;
@@ -167,28 +159,25 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/"><i class="fas fa-home"></i> Inicio</a>
+                        <a class="nav-link" href="/">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#menu"><i class="fas fa-utensils"></i> Menú</a>
+                        <a class="nav-link" href="#menu">Menú</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#testimonials"><i class="fas fa-star"></i> Testimonios</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#contact"><i class="fas fa-envelope"></i> Contacto</a>
+                        <a class="nav-link" href="#contact">Contacto</a>
                     </li>
                     @auth
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url('/dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                            <a class="nav-link" href="{{ url('/dashboard') }}">Dashboard</a>
                         </li>
                     @else
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('login') }}"><i class="fas fa-sign-in-alt"></i> Login</a>
+                            <a class="nav-link" href="{{ route('login') }}">Login</a>
                         </li>
                         @if (Route::has('register'))
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('register') }}"><i class="fas fa-user-plus"></i> Registro</a>
+                                <a class="nav-link" href="{{ route('register') }}">Registro</a>
                             </li>
                         @endif
                     @endauth
@@ -217,21 +206,21 @@
             <div class="carousel-item active">
                 <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="d-block w-100" alt="Café recién preparado">
                 <div class="carousel-caption d-none d-md-block">
-                    <h5><i class="fas fa-coffee"></i> Café Fresco y Aromático</h5>
+                    <h5>Café Fresco y Aromático</h5>
                     <p>Disfruta de nuestros granos seleccionados a mano.</p>
                 </div>
             </div>
             <div class="carousel-item">
                 <img src="https://images.unsplash.com/photo-1559056199-641a0ac8b55e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="d-block w-100" alt="Ambiente acogedor">
                 <div class="carousel-caption d-none d-md-block">
-                    <h5><i class="fas fa-chair"></i> Ambiente Elegante</h5>
+                    <h5>Ambiente Elegante</h5>
                     <p>Un lugar perfecto para relajarte y trabajar.</p>
                 </div>
             </div>
             <div class="carousel-item">
                 <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="d-block w-100" alt="Especialidades de Chuquis">
                 <div class="carousel-caption d-none d-md-block">
-                    <h5><i class="fas fa-birthday-cake"></i> Especialidades Únicas</h5>
+                    <h5>Especialidades Únicas</h5>
                     <p>Prueba nuestros lattes y pasteles caseros.</p>
                 </div>
             </div>
@@ -249,13 +238,13 @@
     <!-- Sección de Menú -->
     <section id="menu" class="py-5">
         <div class="container">
-            <h2 class="text-center mb-5" style="font-family: 'Playfair Display', serif;"><i class="fas fa-utensils"></i> Nuestro Menú</h2>
+            <h2 class="text-center mb-5" style="font-family: 'Playfair Display', serif;">Nuestro Menú</h2>
             <div class="row">
                 <div class="col-md-4">
                     <div class="card">
                         <img src="https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" class="card-img-top" alt="Café Espresso">
                         <div class="card-body">
-                            <h5 class="card-title"><i class="fas fa-coffee"></i> Espresso Clásico</h5>
+                            <h5 class="card-title">Espresso Clásico</h5>
                             <p class="card-text">Un shot intenso y puro. $2.50</p>
                             <a href="#" class="btn btn-custom">Ordenar</a>
                         </div>
@@ -265,7 +254,7 @@
                     <div class="card">
                         <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" class="card-img-top" alt="Latte">
                         <div class="card-body">
-                            <h5 class="card-title"><i class="fas fa-mug-hot"></i> Latte de Vainilla</h5>
+                            <h5 class="card-title">Latte de Vainilla</h5>
                             <p class="card-text">Suave y cremoso con un toque dulce. $4.00</p>
                             <a href="#" class="btn btn-custom">Ordenar</a>
                         </div>
@@ -275,42 +264,9 @@
                     <div class="card">
                         <img src="https://images.unsplash.com/photo-1551024506-0bccd828d307?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" class="card-img-top" alt="Pastel">
                         <div class="card-body">
-                            <h5 class="card-title"><i class="fas fa-birthday-cake"></i> Pastel de Chocolate</h5>
+                            <h5 class="card-title">Pastel de Chocolate</h5>
                             <p class="card-text">Hecho en casa, irresistible. $3.50</p>
                             <a href="#" class="btn btn-custom">Ordenar</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Sección de Testimonios -->
-    <section id="testimonials" class="py-5 bg-light">
-        <div class="container">
-            <h2 class="text-center mb-5" style="font-family: 'Playfair Display', serif;"><i class="fas fa-star"></i> Testimonios</h2>
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="testimonial">
-                        <p>"El mejor café que he probado. Ambiente perfecto para trabajar." <br> <strong>- Ana López</strong></p>
-                        <div class="text-warning">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="testimonial">
-                        <p>"Los pasteles son deliciosos. Vuelvo cada semana." <br> <strong>- Carlos Ruiz</strong></p>
-                        <div class="text-warning">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="testimonial">
-                        <p>"Servicio excelente y café de calidad. ¡Recomendado!" <br> <strong>- María González</strong></p>
-                        <div class="text-warning">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
                         </div>
                     </div>
                 </div>
@@ -321,7 +277,7 @@
     <!-- Sección de Contacto -->
     <section id="contact" class="py-5">
         <div class="container">
-            <h2 class="text-center mb-5" style="font-family: 'Playfair Display', serif;"><i class="fas fa-envelope"></i> Contáctanos</h2>
+            <h2 class="text-center mb-5" style="font-family: 'Playfair Display', serif;">Contáctanos</h2>
             <div class="row">
                 <div class="col-md-6">
                     <form action="{{ route('contact.submit') }}" method="POST">
@@ -344,13 +300,13 @@
                 <div class="col-md-6">
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title"><i class="fas fa-map-marker-alt"></i> Nuestra Ubicación</h5>
+                            <h5 class="card-title">Nuestra Ubicación</h5>
                             <p class="card-text">Calle Principal #123<br>Ciudad, Estado 12345</p>
-                            <h5 class="card-title mt-4"><i class="fas fa-phone"></i> Teléfono</h5>
+                            <h5 class="card-title mt-4">Teléfono</h5>
                             <p class="card-text">+1 (555) 123-4567</p>
-                            <h5 class="card-title mt-4"><i class="fas fa-envelope"></i> Email</h5>
+                            <h5 class="card-title mt-4">Email</h5>
                             <p class="card-text">info@chuquiscoffee.com</p>
-                            <h5 class="card-title mt-4"><i class="fas fa-clock"></i> Horario</h5>
+                            <h5 class="card-title mt-4">Horario</h5>
                             <p class="card-text">Lunes a Viernes: 7:00 AM - 9:00 PM<br>Sábado y Domingo: 8:00 AM - 10:00 PM</p>
                         </div>
                     </div>
@@ -364,14 +320,13 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5><i class="fas fa-coffee"></i> Chuquis Coffee</h5>
+                    <h5>Chuquis Coffee</h5>
                     <p>El mejor café artesanal con el toque perfecto.</p>
                 </div>
                 <div class="col-md-4">
                     <h5>Enlaces Rápidos</h5>
                     <ul class="list-unstyled">
                         <li><a href="#menu" class="text-light">Menú</a></li>
-                        <li><a href="#testimonials" class="text-light">Testimonios</a></li>
                         <li><a href="#contact" class="text-light">Contacto</a></li>
                     </ul>
                 </div>
