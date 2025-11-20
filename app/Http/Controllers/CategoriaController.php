@@ -10,8 +10,20 @@ use App\Http\Requests\CategoriaRequest;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use App\Http\Controllers\Controller;
+use DB;
+
 class CategoriaController extends Controller
 {
+        function __construct()
+    {
+        $this->middleware('permission:ver-categoria|crear-categoria|editar-categoria|borrar-categoria', ['only' => ['index']]);
+        $this->middleware('permission:crear-categoria', ['only' => ['create','store']]);
+        $this->middleware('permission:editar-categoria', ['only' => ['edit','update']]);
+        $this->middleware('permission:borrar-categoria', ['only' => ['destroy']]);
+    }
     /**
      * Display a listing of the resource.
      */
@@ -33,8 +45,9 @@ class CategoriaController extends Controller
         $categoria = new Categoria();
         $tipos = Tipo::all();
         $categoriasPadre = Categoria::all();
+        $permission = Permission::get();
 
-        return view('categoria.create', compact('categoria', 'tipos', 'categoriasPadre'));
+        return view('categoria.create', compact('categoria', 'tipos', 'categoriasPadre', 'permission'));
     }
 
     /**
@@ -54,8 +67,10 @@ class CategoriaController extends Controller
     public function show($id): View
     {
         $categoria = Categoria::with(['tipo', 'categoria_padre'])->findOrFail($id);
-
-        return view('categoria.show', compact('categoria'));
+        $categoriaPermissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
+            ->where("role_has_permissions.role_id",$id)
+            ->get();
+        return view('categoria.show', compact('categoria', 'categoriaPermissions'));
     }
 
     /**
@@ -66,15 +81,19 @@ class CategoriaController extends Controller
         $categoria = Categoria::findOrFail($id);
         $tipos = Tipo::all();
         $categoriasPadre = Categoria::all();
-
-        return view('categoria.edit', compact('categoria', 'tipos', 'categoriasPadre'));
+        $permission = Permission::get();
+        $rolePermissions = DB::table("role_has_permissions")->where("role_has_permissions.role_id",$id)
+            ->pluck('role_has_permissions.permission_id','role_has_permissions.permission_id')
+            ->all();
+        return view('categoria.edit', compact('categoria', 'tipos', 'categoriasPadre', 'permission', 'rolePermissions'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(CategoriaRequest $request, Categoria $categoria): RedirectResponse
+    public function update(CategoriaRequest $request, $id): RedirectResponse
     {
+        $categoria = Categoria::findOrFail($id);
         $categoria->update($request->validated());
 
         return Redirect::route('categorias.index')
