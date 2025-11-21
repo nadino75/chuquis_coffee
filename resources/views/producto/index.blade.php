@@ -8,9 +8,11 @@
         <div class="card-header d-flex align-items-center">
             <h4 class="mb-0">Productos</h4>
             <div class="ml-auto">
+                @can('crear-producto')
                 <button class="btn btn-primary" data-toggle="modal" data-target="#createProductoModal">
                     <i class="fa fa-plus"></i> Crear Nuevo
                 </button>
+                @endcan
             </div>
         </div>
 
@@ -36,8 +38,13 @@
                             <td>{{ $producto->precio }}</td>
                             <td>{{ $producto->categoria->nombre }}</td>
                             <td>
+                                @can('ver-producto')
                                 <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#showProductoModal{{ $producto->id }}"><i class="fa fa-eye"></i></button>
+                                @endcan
+                                @can('editar-producto')
                                 <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#editProductoModal{{ $producto->id }}"><i class="fa fa-edit"></i></button>
+                                @endcan
+                                @can('borrar-producto')
                                 <form action="{{ route('productos.destroy', $producto->id) }}" method="POST" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
@@ -45,6 +52,7 @@
                                         <i class="fa fa-trash"></i>
                                     </button>
                                 </form>
+                                @endcan
                             </td>
                         </tr>
 

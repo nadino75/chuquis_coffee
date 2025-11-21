@@ -12,11 +12,13 @@
         <h4 class="mb-0">Lista de Proveedore</h4>
         <!-- Botón Crear Nuevo a la derecha -->
         <div class="ml-auto">
+            @can('crear-proveedor')
             <button type="button" class="btn btn-light btn-sm" 
                     data-toggle="modal"
                     data-target="#createProveedoreModal">
                 <i class="fa fa-plus-circle"></i> Crear Nuevo
             </button>
+            @endcan
         </div>
     </div>
 
@@ -44,18 +46,22 @@
                     <td>{{ $proveedore->correo }}</td>
                     <td>
                         <!-- Botón Ver -->
+                        @can('ver-proveedor')
                         <button class="btn btn-info btn-sm" data-toggle="modal"
                             data-target="#showProveedoreModal{{ $proveedore->id }}">
                             <i class="fa fa-eye"></i> Ver
                         </button>
-
+                        @endcan
                         <!-- Botón Editar -->
+                        @can('editar-proveedor')
                         <button class="btn btn-warning btn-sm" data-toggle="modal"
                             data-target="#editProveedoreModal{{ $proveedore->id }}">
                             <i class="fa fa-edit"></i> Editar
                         </button>
+                        @endcan
 
                         <!-- Botón Eliminar -->
+                        @can('borrar-proveedor')
                         <form action="{{ route('proveedores.destroy', $proveedore->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
@@ -64,6 +70,7 @@
                                 <i class="fa fa-trash"></i> Eliminar
                             </button>
                         </form>
+                        @endcan
                     </td>
                 </tr>
 

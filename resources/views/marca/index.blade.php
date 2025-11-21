@@ -12,9 +12,11 @@
         <h4 class="mb-0">Lista de Marcas</h4>
         <div class="ml-auto">
             <!-- Botón Crear Nuevo -->
+            @can('crear-marca')
             <button type="button" class="btn btn-light btn-sm" data-toggle="modal" data-target="#createMarcaModal">
                 <i class="fa fa-plus-circle"></i> Crear Nuevo
             </button>
+            @endcan
         </div>
     </div>
 
@@ -34,16 +36,20 @@
                     <td>{{ $marca->nombre }}</td>
                     <td>
                         <!-- Botón Ver -->
+                        @can('ver-marca')
                         <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#showMarcaModal{{ $marca->id }}">
                             <i class="fa fa-eye"></i> Ver
                         </button>
+                        @endcan
 
                         <!-- Botón Editar -->
+                        @can('editar-marca')
                         <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#editMarcaModal{{ $marca->id }}">
                             <i class="fa fa-edit"></i> Editar
                         </button>
 
                         <!-- Botón Eliminar -->
+                        @can('borrar-marca')
                         <form action="{{ route('marcas.destroy', $marca->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
@@ -51,8 +57,10 @@
                                 <i class="fa fa-trash"></i> Eliminar
                             </button>
                         </form>
+                        @endcan
                     </td>
                 </tr>
+                
 
                 <!-- Modal Ver -->
                 <div class="modal fade" id="showMarcaModal{{ $marca->id }}" tabindex="-1">

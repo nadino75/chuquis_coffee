@@ -13,11 +13,13 @@
         <h4 class="mb-0">Lista de Tipos</h4>
         <div class="ml-auto">
             <!-- Botón Crear Nuevo -->
+            @can('crear-tipo')
             <button type="button" class="btn btn-light btn-sm" 
                     data-toggle="modal"
                     data-target="#createTipoModal">
                 <i class="fa fa-plus-circle"></i> Crear Nuevo
             </button>
+            @endcan
         </div>
     </div>
 
@@ -38,18 +40,22 @@
                     <td>{{ $tipo->nombre }}</td>
                     <td>
                         <!-- Botón Ver -->
+                        @can('ver-tipo')
                         <button class="btn btn-info btn-sm" data-toggle="modal"
                                 data-target="#showTipoModal{{ $tipo->id }}">
                             <i class="fa fa-eye"></i> Ver
                         </button>
-
+                        @endcan
                         <!-- Botón Editar -->
+                        @can('editar-tipo')
                         <button class="btn btn-warning btn-sm" data-toggle="modal"
                                 data-target="#editTipoModal{{ $tipo->id }}">
                             <i class="fa fa-edit"></i> Editar
                         </button>
-
+                        @endcan
+                        @can('borrar-tipo')
                         <!-- Botón Eliminar -->
+
                         <form action="{{ route('tipos.destroy', $tipo->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
@@ -58,6 +64,7 @@
                                 <i class="fa fa-trash"></i> Eliminar
                             </button>
                         </form>
+                        @endcan
                     </td>
                 </tr>
 

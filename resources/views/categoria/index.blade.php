@@ -12,10 +12,12 @@
         <h4 class="mb-0">Lista de Categorías</h4>
         <div class="ml-auto">
             <!-- Botón Crear Nuevo -->
+            @can('crear-categoria')
             <button type="button" class="btn btn-light btn-sm" 
                     data-toggle="modal" data-target="#createCategoriaModal">
                 <i class="fa fa-plus-circle"></i> Crear Nuevo
             </button>
+            @endcan
         </div>
     </div>
 
@@ -42,18 +44,21 @@
                     <td>{{ $categoria->categoria_padre->nombre ?? '-' }}</td>
                     <td>
                         <!-- Botón Ver -->
+                        @can('ver-categoria')
                         <button class="btn btn-info btn-sm" data-toggle="modal"
                                 data-target="#showCategoriaModal{{ $categoria->id }}">
                             <i class="fa fa-eye"></i> Ver
                         </button>
-
+                        @endcan
                         <!-- Botón Editar -->
+                        @can('editar-categoria')
                         <button class="btn btn-warning btn-sm" data-toggle="modal"
                                 data-target="#editCategoriaModal{{ $categoria->id }}">
                             <i class="fa fa-edit"></i> Editar
                         </button>
-
+                        @endcan
                         <!-- Botón Eliminar -->
+                        @can('borrar-categoria')
                         <form action="{{ route('categorias.destroy', $categoria->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
@@ -62,14 +67,19 @@
                                 <i class="fa fa-trash"></i> Eliminar
                             </button>
                         </form>
+                        @endcan
                     </td>
                 </tr>
 
                 <!-- Modal Ver -->
+                @can('ver-categoria')
                 @include('categoria.show', ['categoria' => $categoria])
+                @endcan
 
                 <!-- Modal Editar -->
+                @can('editar-categoria')
                 @include('categoria.edit', ['categoria' => $categoria, 'tipos' => $tipos, 'categoriasPadre' => $categoriasPadre])
+                @endcan
 
                 @endforeach
             </tbody>

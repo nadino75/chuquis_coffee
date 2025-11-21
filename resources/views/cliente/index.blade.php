@@ -15,9 +15,11 @@
             <h5 class="card-title mb-0 text-white flex-grow-1">
                 <i class="fas fa-list mr-1"></i> Lista de Clientes
             </h5>
+            @can('crear-cliente')
             <button type="button" class="btn btn-light btn-sm" data-toggle="modal" data-target="#createClienteModal">
                 <i class="fas fa-plus-circle mr-1"></i> Nuevo Cliente
             </button>
+            @endcan
         </div>
 
         <div class="card-body">
@@ -56,18 +58,22 @@
                                 <td class="text-center">
                                     <div class="btn-group" role="group">
                                         <!-- Botón Ver -->
+                                         @can('ver-cliente')
                                         <button class="btn btn-info btn-sm" data-toggle="modal" 
                                                 data-target="#showClienteModal{{ $cliente->ci }}">
                                             <i class="fas fa-eye"></i> Ver
                                         </button>
-
+                                        @endcan
                                         <!-- Botón Editar -->
+                                        @can('editar-cliente')
                                         <button class="btn btn-warning btn-sm" data-toggle="modal" 
                                                 data-target="#editClienteModal{{ $cliente->ci }}">
                                             <i class="fas fa-edit"></i> Editar
                                         </button>
+                                        @endcan
 
                                         <!-- Botón Eliminar -->
+                                        @can('borrar-cliente')
                                         <form action="{{ route('clientes.destroy', $cliente->ci) }}" method="POST" 
                                               class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este cliente?');">
                                             @csrf
@@ -76,6 +82,7 @@
                                                 <i class="fas fa-trash"></i> Eliminar
                                             </button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
