@@ -3,12 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
-
 
 /**
  * Class Venta
@@ -19,6 +15,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property $pago_id
  * @property $precio
  * @property $cantidad
+ * @property $fecha_venta
+ * @property $total
  * @property $created_at
  * @property $updated_at
  *
@@ -28,10 +26,10 @@ use Spatie\Permission\Traits\HasRoles;
  * @package App
  * @mixin \Illuminate\Database\Eloquent\Builder
  */
-class Venta extends Authenticatable
+class Venta extends Model
 {
+    use HasFactory, HasRoles;
     
-    use HasFactory, Notifiable, HasRoles;   
     protected $perPage = 20;
 
     /**
@@ -39,8 +37,21 @@ class Venta extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $fillable = ['producto_id', 'cliente_ci', 'pago_id', 'precio', 'cantidad'];
+    protected $fillable = [
+        'producto_id', 
+        'cliente_ci', 
+        'pago_id', 
+        'precio', 
+        'cantidad',
+        'fecha_venta',
+        'total'
+    ];
 
+    protected $casts = [
+        'precio' => 'decimal:2',
+        'total' => 'decimal:2',
+        'fecha_venta' => 'date'
+    ];
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -65,5 +76,10 @@ class Venta extends Authenticatable
     {
         return $this->belongsTo(\App\Models\Producto::class, 'producto_id', 'id');
     }
-    
+
+    // Calcular el total automáticamente
+    public function getSubtotalAttribute()
+    {
+        return $this->precio * $this->cantidad;
+    }
 }

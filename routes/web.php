@@ -71,5 +71,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('reportes/descargar', [ReporteController::class, 'descargarReporte'])->name('reportes.descargar');
     Route::post('reportes/guardar', [ReporteController::class, 'crearReporteGuardado'])->name('reportes.guardar');
     Route::get('reportes/{id}', [ReporteController::class, 'mostrarReporteGuardado'])->name('reportes.show');
+
+    
+    Route::get('reportes', [ReporteController::class, 'index'])->name('reportes.index');
+    Route::get('reportes/datos', [ReporteController::class, 'obtenerDatosReporte'])->name('reportes.datos');
+    Route::get('reportes/descargar-pdf', [ReporteController::class, 'descargarPDF'])->name('reportes.descargar-pdf');
+    Route::get('reportes/debug', [ReporteController::class, 'debug'])->name('reportes.debug');
     
     });

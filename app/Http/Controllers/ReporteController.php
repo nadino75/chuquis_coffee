@@ -3,25 +3,35 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Reporte;
 use App\Models\Venta;
 use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\Cliente;
 use App\Models\User;
+use App\Models\Categoria;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use PDF;
 
 class ReporteController extends Controller
 {
     public function index(Request $request)
     {
-        $fechaInicio = $request->get('fecha_inicio', now()->subMonth()->format('Y-m-d'));
+        $fechaInicio = $request->get('fecha_inicio', now()->subDays(30)->format('Y-m-d'));
         $fechaFin = $request->get('fecha_fin', now()->format('Y-m-d'));
-        $tipoReporte = $request->get('tipo_reporte', 'ventas');
+        $tipoReporte = $request->get('tipo_reporte', 'dashboard');
+
+        \Log::info("Generando reporte", [
+            'tipo' => $tipoReporte,
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin
+        ]);
 
         // Generar reporte en tiempo real
         $datosReporte = $this->generarReporteTiempoReal($tipoReporte, $fechaInicio, $fechaFin);
+
+        // Debug: mostrar datos en log
+        \Log::info("Datos del reporte generados", ['datos' => $datosReporte]);
 
         return view('reportes.index', compact('datosReporte', 'fechaInicio', 'fechaFin', 'tipoReporte'));
     }
@@ -29,6 +39,8 @@ class ReporteController extends Controller
     private function generarReporteTiempoReal($tipo, $fechaInicio, $fechaFin)
     {
         switch ($tipo) {
+            case 'dashboard':
+                return $this->reporteDashboard($fechaInicio, $fechaFin);
             case 'ventas':
                 return $this->reporteVentas($fechaInicio, $fechaFin);
             case 'pagos':
@@ -39,87 +51,125 @@ class ReporteController extends Controller
                 return $this->reporteInventario();
             case 'clientes':
                 return $this->reporteClientes($fechaInicio, $fechaFin);
-            case 'general':
-                return $this->reporteGeneral($fechaInicio, $fechaFin);
             default:
-                return $this->reporteVentas($fechaInicio, $fechaFin);
+                return $this->reporteDashboard($fechaInicio, $fechaFin);
+        }
+    }
+
+    private function reporteDashboard($fechaInicio, $fechaFin)
+    {
+        try {
+            \Log::info("Generando dashboard", ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin]);
+
+            // Verificar si hay datos en el rango de fechas
+            $ventasRango = Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])->get();
+            \Log::info("Ventas en rango: " . $ventasRango->count());
+
+            // Estadísticas generales
+            $totalVentas = Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])->count();
+            $totalIngresos = Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])->sum('total');
+            $totalPagos = Pago::whereBetween('fecha', [$fechaInicio, $fechaFin])->count();
+            $totalClientes = Cliente::count();
+            $totalProductos = Producto::count();
+            
+            \Log::info("Estadísticas calculadas", [
+                'ventas' => $totalVentas,
+                'ingresos' => $totalIngresos,
+                'pagos' => $totalPagos
+            ]);
+
+            // Ventas por día (últimos 7 días)
+            $fechaInicioSemana = now()->subDays(7)->format('Y-m-d');
+            $fechaFinSemana = now()->format('Y-m-d');
+            
+            $ventasUltimaSemana = Venta::whereBetween('fecha_venta', [$fechaInicioSemana, $fechaFinSemana])
+                ->selectRaw('DATE(fecha_venta) as fecha, COUNT(*) as cantidad, SUM(total) as total')
+                ->groupBy('fecha')
+                ->orderBy('fecha')
+                ->get();
+
+            \Log::info("Ventas última semana", ['data' => $ventasUltimaSemana->toArray()]);
+
+            // Productos más vendidos
+            $productosMasVendidos = $this->obtenerProductosMasVendidos($fechaInicio, $fechaFin);
+
+            // Alertas de stock
+            $alertasStock = $this->obtenerAlertasStock();
+
+            // Métodos de pago más utilizados
+            $metodosPago = $this->obtenerMetodosPago($fechaInicio, $fechaFin);
+
+            $datos = [
+                'dashboard' => true,
+                'estadisticas_generales' => [
+                    'total_ventas' => $totalVentas,
+                    'total_ingresos' => $totalIngresos,
+                    'total_pagos' => $totalPagos,
+                    'total_clientes' => $totalClientes,
+                    'total_productos' => $totalProductos,
+                ],
+                'ventas_ultima_semana' => $ventasUltimaSemana,
+                'productos_mas_vendidos' => $productosMasVendidos,
+                'alertas_stock' => $alertasStock,
+                'metodos_pago' => $metodosPago,
+            ];
+
+            \Log::info("Dashboard generado", $datos);
+
+            return $datos;
+
+        } catch (\Exception $e) {
+            \Log::error('Error en reporte dashboard: ' . $e->getMessage());
+            return [
+                'dashboard' => true,
+                'estadisticas_generales' => [
+                    'total_ventas' => 0,
+                    'total_ingresos' => 0,
+                    'total_pagos' => 0,
+                    'total_clientes' => 0,
+                    'total_productos' => 0,
+                ],
+                'ventas_ultima_semana' => collect(),
+                'productos_mas_vendidos' => collect(),
+                'alertas_stock' => collect(),
+                'metodos_pago' => collect(),
+                'error' => $e->getMessage()
+            ];
         }
     }
 
     private function reporteVentas($fechaInicio, $fechaFin)
     {
         try {
-            // Primero, verifiquemos la estructura de la tabla ventas
-            $ventaEjemplo = Venta::first();
-            
-            // Ventas por día - consulta más segura
-            $ventasPorDia = Venta::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])
-                ->selectRaw('DATE(created_at) as fecha, COUNT(*) as cantidad_ventas')
+            \Log::info("Generando reporte ventas", ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin]);
+
+            // Ventas por día
+            $ventasPorDia = Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])
+                ->selectRaw('DATE(fecha_venta) as fecha, COUNT(*) as cantidad, SUM(total) as total')
                 ->groupBy('fecha')
                 ->orderBy('fecha')
                 ->get();
 
-            // Si existe columna total, agregarla
-            if ($ventaEjemplo && isset($ventaEjemplo->total)) {
-                $ventasConTotal = Venta::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])
-                    ->selectRaw('SUM(total) as monto_total')
-                    ->first();
-                
-                $montoTotal = $ventasConTotal->monto_total ?? 0;
-            } else {
-                // Calcular total sumando detalles de venta si existe la relación
-                $montoTotal = 0;
-                if (method_exists(Venta::class, 'detalles')) {
-                    $montoTotal = DB::table('venta_detalles')
-                        ->join('ventas', 'venta_detalles.venta_id', '=', 'ventas.id')
-                        ->whereBetween('ventas.created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])
-                        ->sum(DB::raw('venta_detalles.cantidad * venta_detalles.precio'));
-                }
-            }
+            \Log::info("Ventas por día", ['data' => $ventasPorDia->toArray()]);
 
-            // Ventas por vendedor
-            $ventasPorVendedor = Venta::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])
-                ->join('users', 'ventas.usuario_id', '=', 'users.id')
-                ->selectRaw('users.name as vendedor, COUNT(*) as cantidad_ventas')
-                ->groupBy('users.id', 'users.name')
-                ->orderBy('cantidad_ventas', 'desc')
-                ->get();
-
-            // Productos más vendidos (si existe la tabla venta_detalles)
-            $productosMasVendidos = collect();
-            if (method_exists(Venta::class, 'detalles')) {
-                $productosMasVendidos = DB::table('venta_detalles')
-                    ->join('ventas', 'venta_detalles.venta_id', '=', 'ventas.id')
-                    ->join('productos', 'venta_detalles.producto_id', '=', 'productos.id')
-                    ->whereBetween('ventas.created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])
-                    ->selectRaw('productos.nombre, SUM(venta_detalles.cantidad) as cantidad_vendida')
-                    ->groupBy('productos.id', 'productos.nombre')
-                    ->orderBy('cantidad_vendida', 'desc')
-                    ->limit(10)
-                    ->get();
-            }
+            // Productos más vendidos
+            $productosMasVendidos = $this->obtenerProductosMasVendidos($fechaInicio, $fechaFin);
 
             return [
-                'ventas_totales' => Venta::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])->count(),
-                'monto_total' => $montoTotal,
                 'ventas_por_dia' => $ventasPorDia,
-                'ventas_por_vendedor' => $ventasPorVendedor,
                 'productos_mas_vendidos' => $productosMasVendidos,
-                'ventas_por_estado' => Venta::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])
-                    ->selectRaw('estado, COUNT(*) as cantidad')
-                    ->groupBy('estado')
-                    ->get()
+                'total_ventas' => Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])->count(),
+                'total_ingresos' => Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])->sum('total'),
             ];
 
         } catch (\Exception $e) {
-            // En caso de error, retornar estructura básica
+            \Log::error('Error en reporte ventas: ' . $e->getMessage());
             return [
-                'ventas_totales' => 0,
-                'monto_total' => 0,
                 'ventas_por_dia' => collect(),
-                'ventas_por_vendedor' => collect(),
                 'productos_mas_vendidos' => collect(),
-                'ventas_por_estado' => collect()
+                'total_ventas' => 0,
+                'total_ingresos' => 0,
+                'error' => $e->getMessage()
             ];
         }
     }
@@ -127,48 +177,33 @@ class ReporteController extends Controller
     private function reportePagos($fechaInicio, $fechaFin)
     {
         try {
-            // Verificar estructura de la tabla pagos
-            $pagoEjemplo = Pago::first();
-            
-            $pagosPorDia = Pago::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])
-                ->selectRaw('DATE(created_at) as fecha, COUNT(*) as cantidad_pagos')
+            \Log::info("Generando reporte pagos", ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin]);
+
+            // Pagos por día
+            $pagosPorDia = Pago::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->selectRaw('DATE(fecha) as fecha, COUNT(*) as cantidad, SUM(total_pagado) as monto_total')
                 ->groupBy('fecha')
                 ->orderBy('fecha')
                 ->get();
 
-            // Si existe columna monto
-            $montoTotal = 0;
-            if ($pagoEjemplo && isset($pagoEjemplo->monto)) {
-                $montoTotal = Pago::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])->sum('monto');
-            }
-
-            // Pagos por método si existe la columna
-            $pagosPorMetodo = collect();
-            if ($pagoEjemplo && isset($pagoEjemplo->metodo_pago)) {
-                $pagosPorMetodo = Pago::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])
-                    ->selectRaw('metodo_pago, COUNT(*) as cantidad')
-                    ->groupBy('metodo_pago')
-                    ->get();
-            }
+            // Métodos de pago
+            $metodosPago = $this->obtenerMetodosPago($fechaInicio, $fechaFin);
 
             return [
-                'pagos_totales' => Pago::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])->count(),
-                'monto_total' => $montoTotal,
                 'pagos_por_dia' => $pagosPorDia,
-                'pagos_por_metodo' => $pagosPorMetodo,
-                'pagos_por_estado' => Pago::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])
-                    ->selectRaw('estado, COUNT(*) as cantidad')
-                    ->groupBy('estado')
-                    ->get()
+                'metodos_pago' => $metodosPago,
+                'total_pagos' => Pago::whereBetween('fecha', [$fechaInicio, $fechaFin])->count(),
+                'monto_total' => Pago::whereBetween('fecha', [$fechaInicio, $fechaFin])->sum('total_pagado'),
             ];
 
         } catch (\Exception $e) {
+            \Log::error('Error en reporte pagos: ' . $e->getMessage());
             return [
-                'pagos_totales' => 0,
-                'monto_total' => 0,
                 'pagos_por_dia' => collect(),
-                'pagos_por_metodo' => collect(),
-                'pagos_por_estado' => collect()
+                'metodos_pago' => collect(),
+                'total_pagos' => 0,
+                'monto_total' => 0,
+                'error' => $e->getMessage()
             ];
         }
     }
@@ -176,37 +211,36 @@ class ReporteController extends Controller
     private function reporteProductos($fechaInicio, $fechaFin)
     {
         try {
-            $productosVendidos = collect();
-            
-            if (method_exists(Venta::class, 'detalles')) {
-                $productosVendidos = DB::table('venta_detalles')
-                    ->join('ventas', 'venta_detalles.venta_id', '=', 'ventas.id')
-                    ->join('productos', 'venta_detalles.producto_id', '=', 'productos.id')
-                    ->whereBetween('ventas.created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])
-                    ->selectRaw('productos.id, productos.nombre, SUM(venta_detalles.cantidad) as cantidad_vendida')
-                    ->groupBy('productos.id', 'productos.nombre')
-                    ->get();
-            }
+            // Productos más vendidos
+            $productosMasVendidos = $this->obtenerProductosMasVendidos($fechaInicio, $fechaFin);
+
+            // Productos por categoría
+            $productosPorCategoria = DB::table('productos')
+                ->join('categorias', 'productos.categoria_id', '=', 'categorias.id')
+                ->selectRaw('categorias.nombre as categoria, COUNT(*) as cantidad')
+                ->groupBy('categorias.id', 'categorias.nombre')
+                ->get();
+
+            // Alertas de stock
+            $alertasStock = $this->obtenerAlertasStock();
 
             return [
+                'productos_mas_vendidos' => $productosMasVendidos,
+                'productos_por_categoria' => $productosPorCategoria,
+                'alertas_stock' => $alertasStock,
                 'total_productos' => Producto::count(),
-                'productos_vendidos' => $productosVendidos,
-                'productos_stock_bajo' => Producto::where('stock', '<', 10)->count(),
                 'valor_inventario' => Producto::sum(DB::raw('precio * stock')),
-                'productos_por_categoria' => DB::table('productos')
-                    ->join('categorias', 'productos.categoria_id', '=', 'categorias.id')
-                    ->selectRaw('categorias.nombre as categoria, COUNT(*) as cantidad')
-                    ->groupBy('categorias.id', 'categorias.nombre')
-                    ->get()
             ];
 
         } catch (\Exception $e) {
+            \Log::error('Error en reporte productos: ' . $e->getMessage());
             return [
+                'productos_mas_vendidos' => collect(),
+                'productos_por_categoria' => collect(),
+                'alertas_stock' => collect(),
                 'total_productos' => 0,
-                'productos_vendidos' => collect(),
-                'productos_stock_bajo' => 0,
                 'valor_inventario' => 0,
-                'productos_por_categoria' => collect()
+                'error' => $e->getMessage()
             ];
         }
     }
@@ -214,31 +248,36 @@ class ReporteController extends Controller
     private function reporteInventario()
     {
         try {
+            $alertasStock = $this->obtenerAlertasStock();
+
+            $productosPorCategoria = DB::table('productos')
+                ->join('categorias', 'productos.categoria_id', '=', 'categorias.id')
+                ->selectRaw('categorias.nombre as categoria, COUNT(*) as cantidad, SUM(productos.precio * productos.stock) as valor_total')
+                ->groupBy('categorias.id', 'categorias.nombre')
+                ->get();
+
+            $productosSinStock = Producto::where('stock', 0)->get();
+            $productosStockBajo = Producto::where('stock', '<', 10)->where('stock', '>', 0)->get();
+
             return [
+                'alertas_stock' => $alertasStock,
+                'productos_por_categoria' => $productosPorCategoria,
+                'productos_sin_stock' => $productosSinStock,
+                'productos_stock_bajo' => $productosStockBajo,
                 'total_productos' => Producto::count(),
-                'productos_stock_bajo' => Producto::where('stock', '<', 10)->get(),
-                'productos_sin_stock' => Producto::where('stock', 0)->get(),
                 'valor_total_inventario' => Producto::sum(DB::raw('precio * stock')),
-                'productos_por_categoria' => DB::table('productos')
-                    ->join('categorias', 'productos.categoria_id', '=', 'categorias.id')
-                    ->selectRaw('categorias.nombre as categoria, COUNT(*) as cantidad')
-                    ->groupBy('categorias.id', 'categorias.nombre')
-                    ->get(),
-                'top_productos_valor' => Producto::select('*')
-                    ->selectRaw('precio * stock as valor_total')
-                    ->orderBy('valor_total', 'desc')
-                    ->limit(10)
-                    ->get()
             ];
 
         } catch (\Exception $e) {
+            \Log::error('Error en reporte inventario: ' . $e->getMessage());
             return [
-                'total_productos' => 0,
-                'productos_stock_bajo' => collect(),
-                'productos_sin_stock' => collect(),
-                'valor_total_inventario' => 0,
+                'alertas_stock' => collect(),
                 'productos_por_categoria' => collect(),
-                'top_productos_valor' => collect()
+                'productos_sin_stock' => collect(),
+                'productos_stock_bajo' => collect(),
+                'total_productos' => 0,
+                'valor_total_inventario' => 0,
+                'error' => $e->getMessage()
             ];
         }
     }
@@ -246,129 +285,120 @@ class ReporteController extends Controller
     private function reporteClientes($fechaInicio, $fechaFin)
     {
         try {
+            // Mejores clientes
             $mejoresClientes = Cliente::withCount(['ventas' => function($query) use ($fechaInicio, $fechaFin) {
-                $query->whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59']);
+                $query->whereBetween('fecha_venta', [$fechaInicio, $fechaFin]);
             }])
+            ->withSum(['ventas' => function($query) use ($fechaInicio, $fechaFin) {
+                $query->whereBetween('fecha_venta', [$fechaInicio, $fechaFin]);
+            }], 'total')
             ->orderBy('ventas_count', 'desc')
             ->limit(10)
             ->get();
 
+            // Clientes por ciudad
+            $clientesPorCiudad = Cliente::selectRaw('ciudad, COUNT(*) as cantidad')
+                ->groupBy('ciudad')
+                ->orderBy('cantidad', 'desc')
+                ->get();
+
+            // Clientes nuevos
+            $clientesNuevos = Cliente::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])->count();
+
             return [
+                'mejores_clientes' => $mejoresClientes,
+                'clientes_por_ciudad' => $clientesPorCiudad,
+                'clientes_nuevos' => $clientesNuevos,
                 'total_clientes' => Cliente::count(),
                 'clientes_activos' => Cliente::has('ventas')->count(),
-                'mejores_clientes' => $mejoresClientes,
-                'clientes_nuevos' => Cliente::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])->count(),
-                'clientes_por_ciudad' => Cliente::selectRaw('ciudad, COUNT(*) as cantidad')
-                    ->groupBy('ciudad')
-                    ->orderBy('cantidad', 'desc')
-                    ->get()
             ];
 
         } catch (\Exception $e) {
+            \Log::error('Error en reporte clientes: ' . $e->getMessage());
             return [
+                'mejores_clientes' => collect(),
+                'clientes_por_ciudad' => collect(),
+                'clientes_nuevos' => 0,
                 'total_clientes' => 0,
                 'clientes_activos' => 0,
-                'mejores_clientes' => collect(),
-                'clientes_nuevos' => 0,
-                'clientes_por_ciudad' => collect()
+                'error' => $e->getMessage()
             ];
         }
     }
 
-    private function reporteGeneral($fechaInicio, $fechaFin)
+    // Métodos auxiliares
+    private function obtenerProductosMasVendidos($fechaInicio, $fechaFin)
     {
-        return [
-            'resumen_ventas' => $this->reporteVentas($fechaInicio, $fechaFin),
-            'resumen_pagos' => $this->reportePagos($fechaInicio, $fechaFin),
-            'resumen_clientes' => $this->reporteClientes($fechaInicio, $fechaFin),
-            'resumen_inventario' => $this->reporteInventario()
-        ];
+        try {
+            $resultado = Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])
+                ->join('productos', 'ventas.producto_id', '=', 'productos.id')
+                ->selectRaw('productos.id, productos.nombre, SUM(ventas.cantidad) as cantidad_vendida, SUM(ventas.total) as total_ingresos')
+                ->groupBy('productos.id', 'productos.nombre')
+                ->orderBy('cantidad_vendida', 'desc')
+                ->limit(10)
+                ->get();
+
+            \Log::info("Productos más vendidos", ['data' => $resultado->toArray()]);
+            return $resultado;
+
+        } catch (\Exception $e) {
+            \Log::error('Error obteniendo productos más vendidos: ' . $e->getMessage());
+            return collect();
+        }
     }
 
-    public function descargarReporte(Request $request)
+    private function obtenerAlertasStock()
     {
-        $tipoReporte = $request->get('tipo_reporte', 'ventas');
-        $fechaInicio = $request->get('fecha_inicio', now()->subMonth()->format('Y-m-d'));
+        $alertas = Producto::where('stock', '<', 10)
+            ->select('id', 'nombre', 'stock', 'stock_minimo')
+            ->orderBy('stock', 'asc')
+            ->get();
+
+        \Log::info("Alertas de stock", ['data' => $alertas->toArray()]);
+        return $alertas;
+    }
+
+    private function obtenerMetodosPago($fechaInicio, $fechaFin)
+    {
+        $metodos = Pago::whereBetween('fecha', [$fechaInicio, $fechaFin])
+            ->selectRaw('tipo_pago as metodo_pago, COUNT(*) as cantidad, SUM(total_pagado) as monto_total')
+            ->groupBy('tipo_pago')
+            ->orderBy('cantidad', 'desc')
+            ->get();
+
+        \Log::info("Métodos de pago", ['data' => $metodos->toArray()]);
+        return $metodos;
+    }
+
+    public function descargarPDF(Request $request)
+    {
+        $tipoReporte = $request->get('tipo_reporte', 'dashboard');
+        $fechaInicio = $request->get('fecha_inicio', now()->subDays(30)->format('Y-m-d'));
         $fechaFin = $request->get('fecha_fin', now()->format('Y-m-d'));
 
         $datos = $this->generarReporteTiempoReal($tipoReporte, $fechaInicio, $fechaFin);
 
-        $filename = "reporte_{$tipoReporte}_{$fechaInicio}_a_{$fechaFin}.csv";
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"$filename\""
-        ];
+        $pdf = PDF::loadView('reportes.pdf.plantilla', [
+            'datos' => $datos,
+            'tipoReporte' => $tipoReporte,
+            'fechaInicio' => $fechaInicio,
+            'fechaFin' => $fechaFin,
+            'fechaGeneracion' => now()->format('d/m/Y H:i')
+        ]);
 
-        $callback = function() use ($datos, $tipoReporte) {
-            $file = fopen('php://output', 'w');
-            
-            switch ($tipoReporte) {
-                case 'ventas':
-                    fputcsv($file, ['Fecha', 'Cantidad de Ventas']);
-                    foreach ($datos['ventas_por_dia'] as $fila) {
-                        fputcsv($file, [
-                            $fila->fecha,
-                            $fila->cantidad_ventas
-                        ]);
-                    }
-                    break;
-                case 'pagos':
-                    fputcsv($file, ['Fecha', 'Cantidad de Pagos']);
-                    foreach ($datos['pagos_por_dia'] as $fila) {
-                        fputcsv($file, [
-                            $fila->fecha,
-                            $fila->cantidad_pagos
-                        ]);
-                    }
-                    break;
-                default:
-                    fputcsv($file, ['Datos', 'Valor']);
-                    fputcsv($file, ['Reporte', $tipoReporte]);
-            }
-            
-            fclose($file);
-        };
+        $nombreArchivo = "reporte_{$tipoReporte}_{$fechaInicio}_a_{$fechaFin}.pdf";
 
-        return response()->stream($callback, 200, $headers);
+        return $pdf->download($nombreArchivo);
     }
 
-    // Métodos adicionales para API/AJAX
     public function obtenerDatosReporte(Request $request)
     {
-        $tipoReporte = $request->get('tipo_reporte', 'ventas');
-        $fechaInicio = $request->get('fecha_inicio', now()->subMonth()->format('Y-m-d'));
+        $tipoReporte = $request->get('tipo_reporte', 'dashboard');
+        $fechaInicio = $request->get('fecha_inicio', now()->subDays(30)->format('Y-m-d'));
         $fechaFin = $request->get('fecha_fin', now()->format('Y-m-d'));
 
         $datos = $this->generarReporteTiempoReal($tipoReporte, $fechaInicio, $fechaFin);
 
         return response()->json($datos);
     }
-
-    public function crearReporteGuardado(Request $request)
-    {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'tipo' => 'required|in:ventas,pagos,productos,inventario,clientes,general',
-        ]);
-
-        $filtros = $request->only(['fecha_inicio', 'fecha_fin']);
-        $datos = $this->generarReporteTiempoReal($request->tipo, $filtros['fecha_inicio'], $filtros['fecha_fin']);
-
-        $reporte = Reporte::create([
-            'nombre' => $request->nombre,
-            'descripcion' => $request->descripcion,
-            'tipo' => $request->tipo,
-            'filtros' => $filtros,
-            'datos' => $datos,
-            'usuario_id' => auth()->id()
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Reporte guardado correctamente',
-            'reporte' => $reporte
-        ]);
-    }
-    
 }
