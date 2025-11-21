@@ -30,10 +30,28 @@ class ReporteController extends Controller
         // Generar reporte en tiempo real
         $datosReporte = $this->generarReporteTiempoReal($tipoReporte, $fechaInicio, $fechaFin);
 
-        // Debug: mostrar datos en log
-        \Log::info("Datos del reporte generados", ['datos' => $datosReporte]);
-
         return view('reportes.index', compact('datosReporte', 'fechaInicio', 'fechaFin', 'tipoReporte'));
+    }
+
+    /**
+     * Método para mostrar reportes guardados (si es necesario)
+     */
+    public function mostrarReporteGuardado($id = null)
+    {
+        // Si tienes una tabla de reportes guardados, implementa aquí la lógica
+        // Por ahora, redirigimos al index principal
+        return redirect()->route('reportes.index')->with('info', 'Función de reportes guardados no implementada aún.');
+    }
+
+    /**
+     * Método alternativo - si necesitas una página específica para reportes guardados
+     */
+    public function reportesGuardados()
+    {
+        // Aquí puedes implementar la lógica para mostrar reportes guardados
+        return view('reportes.guardados', [
+            'mensaje' => 'Módulo de reportes guardados - En desarrollo'
+        ]);
     }
 
     private function generarReporteTiempoReal($tipo, $fechaInicio, $fechaFin)
@@ -59,16 +77,27 @@ class ReporteController extends Controller
     private function reporteDashboard($fechaInicio, $fechaFin)
     {
         try {
-            \Log::info("Generando dashboard", ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin]);
+            \Log::info("=== INICIANDO REPORTE DASHBOARD ===");
+            
+            // CORREGIR: Usar Carbon para manejo preciso de fechas
+            $fechaInicioCarbon = Carbon::parse($fechaInicio)->startOfDay();
+            $fechaFinCarbon = Carbon::parse($fechaFin)->endOfDay();
 
-            // Verificar si hay datos en el rango de fechas
-            $ventasRango = Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])->get();
-            \Log::info("Ventas en rango: " . $ventasRango->count());
+            \Log::info("Fechas corregidas - Inicio: {$fechaInicioCarbon}, Fin: {$fechaFinCarbon}");
 
-            // Estadísticas generales
-            $totalVentas = Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])->count();
-            $totalIngresos = Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])->sum('total');
-            $totalPagos = Pago::whereBetween('fecha', [$fechaInicio, $fechaFin])->count();
+            // VERIFICACIÓN DETALLADA CON FECHAS CORREGIDAS
+            $totalVentas = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])->count();
+            $ventasEnRango = Venta::with('producto')
+                ->whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
+                ->get();
+
+            \Log::info("VENTAS en rango: {$totalVentas}");
+            foreach ($ventasEnRango as $venta) {
+                \Log::info("-> Venta ID: {$venta->id}, Fecha: {$venta->fecha_venta}, Producto: " . ($venta->producto ? $venta->producto->nombre : 'N/A') . ", Total: {$venta->total}");
+            }
+
+            $totalIngresos = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])->sum('total');
+            $totalPagos = Pago::whereBetween('fecha', [$fechaInicioCarbon, $fechaFinCarbon])->count();
             $totalClientes = Cliente::count();
             $totalProductos = Producto::count();
             
@@ -78,26 +107,45 @@ class ReporteController extends Controller
                 'pagos' => $totalPagos
             ]);
 
-            // Ventas por día (últimos 7 días)
-            $fechaInicioSemana = now()->subDays(7)->format('Y-m-d');
-            $fechaFinSemana = now()->format('Y-m-d');
-            
-            $ventasUltimaSemana = Venta::whereBetween('fecha_venta', [$fechaInicioSemana, $fechaFinSemana])
+            // VENTAS POR DÍA - USAR RANGO COMPLETO SOLICITADO
+            $ventasUltimaSemana = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
                 ->selectRaw('DATE(fecha_venta) as fecha, COUNT(*) as cantidad, SUM(total) as total')
                 ->groupBy('fecha')
                 ->orderBy('fecha')
                 ->get();
 
-            \Log::info("Ventas última semana", ['data' => $ventasUltimaSemana->toArray()]);
+            \Log::info("Ventas por día resultados:", $ventasUltimaSemana->toArray());
 
-            // Productos más vendidos
-            $productosMasVendidos = $this->obtenerProductosMasVendidos($fechaInicio, $fechaFin);
+            // PRODUCTOS MÁS VENDIDOS - CON FECHAS CORREGIDAS
+            $productosMasVendidos = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
+                ->join('productos', 'ventas.producto_id', '=', 'productos.id')
+                ->selectRaw('
+                    productos.id, 
+                    productos.nombre, 
+                    COALESCE(SUM(ventas.cantidad), 0) as cantidad_vendida, 
+                    COALESCE(SUM(ventas.total), 0) as total_ingresos
+                ')
+                ->groupBy('productos.id', 'productos.nombre')
+                ->orderBy('cantidad_vendida', 'desc')
+                ->limit(10)
+                ->get();
 
-            // Alertas de stock
-            $alertasStock = $this->obtenerAlertasStock();
+            \Log::info("Productos más vendidos:", $productosMasVendidos->toArray());
 
-            // Métodos de pago más utilizados
-            $metodosPago = $this->obtenerMetodosPago($fechaInicio, $fechaFin);
+            // ALERTAS DE STOCK
+            $alertasStock = Producto::where('stock', '<', 10)
+                ->select('id', 'nombre', 'stock', 'stock_minimo')
+                ->orderBy('stock', 'asc')
+                ->get();
+
+            \Log::info("Alertas de stock:", $alertasStock->toArray());
+
+            // MÉTODOS DE PAGO - CON FECHAS CORREGIDAS
+            $metodosPago = Pago::whereBetween('fecha', [$fechaInicioCarbon, $fechaFinCarbon])
+                ->selectRaw('tipo_pago as metodo_pago, COUNT(*) as cantidad, SUM(total_pagado) as monto_total')
+                ->groupBy('tipo_pago')
+                ->orderBy('cantidad', 'desc')
+                ->get();
 
             $datos = [
                 'dashboard' => true,
@@ -112,22 +160,30 @@ class ReporteController extends Controller
                 'productos_mas_vendidos' => $productosMasVendidos,
                 'alertas_stock' => $alertasStock,
                 'metodos_pago' => $metodosPago,
+                'debug' => [
+                    'fechas_originales' => ['inicio' => $fechaInicio, 'fin' => $fechaFin],
+                    'fechas_corregidas' => ['inicio' => $fechaInicioCarbon->format('Y-m-d H:i:s'), 'fin' => $fechaFinCarbon->format('Y-m-d H:i:s')],
+                    'ventas_en_rango_count' => $ventasEnRango->count(),
+                ]
             ];
 
-            \Log::info("Dashboard generado", $datos);
+            \Log::info("=== DATOS FINALES DEL REPORTE ===");
+            \Log::info(json_encode($datos, JSON_PRETTY_PRINT));
 
             return $datos;
 
         } catch (\Exception $e) {
             \Log::error('Error en reporte dashboard: ' . $e->getMessage());
+            \Log::error('Trace: ' . $e->getTraceAsString());
+            
             return [
                 'dashboard' => true,
                 'estadisticas_generales' => [
                     'total_ventas' => 0,
                     'total_ingresos' => 0,
                     'total_pagos' => 0,
-                    'total_clientes' => 0,
-                    'total_productos' => 0,
+                    'total_clientes' => Cliente::count(),
+                    'total_productos' => Producto::count(),
                 ],
                 'ventas_ultima_semana' => collect(),
                 'productos_mas_vendidos' => collect(),
@@ -143,8 +199,12 @@ class ReporteController extends Controller
         try {
             \Log::info("Generando reporte ventas", ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin]);
 
+            // CORREGIR FECHAS
+            $fechaInicioCarbon = Carbon::parse($fechaInicio)->startOfDay();
+            $fechaFinCarbon = Carbon::parse($fechaFin)->endOfDay();
+
             // Ventas por día
-            $ventasPorDia = Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])
+            $ventasPorDia = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
                 ->selectRaw('DATE(fecha_venta) as fecha, COUNT(*) as cantidad, SUM(total) as total')
                 ->groupBy('fecha')
                 ->orderBy('fecha')
@@ -153,13 +213,18 @@ class ReporteController extends Controller
             \Log::info("Ventas por día", ['data' => $ventasPorDia->toArray()]);
 
             // Productos más vendidos
-            $productosMasVendidos = $this->obtenerProductosMasVendidos($fechaInicio, $fechaFin);
+            $productosMasVendidos = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
+                ->join('productos', 'ventas.producto_id', '=', 'productos.id')
+                ->selectRaw('productos.id, productos.nombre, SUM(ventas.cantidad) as cantidad_vendida, SUM(ventas.total) as total_ingresos')
+                ->groupBy('productos.id', 'productos.nombre')
+                ->orderBy('cantidad_vendida', 'desc')
+                ->get();
 
             return [
                 'ventas_por_dia' => $ventasPorDia,
                 'productos_mas_vendidos' => $productosMasVendidos,
-                'total_ventas' => Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])->count(),
-                'total_ingresos' => Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])->sum('total'),
+                'total_ventas' => Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])->count(),
+                'total_ingresos' => Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])->sum('total'),
             ];
 
         } catch (\Exception $e) {
@@ -179,21 +244,29 @@ class ReporteController extends Controller
         try {
             \Log::info("Generando reporte pagos", ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin]);
 
+            // CORREGIR FECHAS
+            $fechaInicioCarbon = Carbon::parse($fechaInicio)->startOfDay();
+            $fechaFinCarbon = Carbon::parse($fechaFin)->endOfDay();
+
             // Pagos por día
-            $pagosPorDia = Pago::whereBetween('fecha', [$fechaInicio, $fechaFin])
+            $pagosPorDia = Pago::whereBetween('fecha', [$fechaInicioCarbon, $fechaFinCarbon])
                 ->selectRaw('DATE(fecha) as fecha, COUNT(*) as cantidad, SUM(total_pagado) as monto_total')
                 ->groupBy('fecha')
                 ->orderBy('fecha')
                 ->get();
 
             // Métodos de pago
-            $metodosPago = $this->obtenerMetodosPago($fechaInicio, $fechaFin);
+            $metodosPago = Pago::whereBetween('fecha', [$fechaInicioCarbon, $fechaFinCarbon])
+                ->selectRaw('tipo_pago as metodo_pago, COUNT(*) as cantidad, SUM(total_pagado) as monto_total')
+                ->groupBy('tipo_pago')
+                ->orderBy('cantidad', 'desc')
+                ->get();
 
             return [
                 'pagos_por_dia' => $pagosPorDia,
                 'metodos_pago' => $metodosPago,
-                'total_pagos' => Pago::whereBetween('fecha', [$fechaInicio, $fechaFin])->count(),
-                'monto_total' => Pago::whereBetween('fecha', [$fechaInicio, $fechaFin])->sum('total_pagado'),
+                'total_pagos' => Pago::whereBetween('fecha', [$fechaInicioCarbon, $fechaFinCarbon])->count(),
+                'monto_total' => Pago::whereBetween('fecha', [$fechaInicioCarbon, $fechaFinCarbon])->sum('total_pagado'),
             ];
 
         } catch (\Exception $e) {
@@ -211,8 +284,17 @@ class ReporteController extends Controller
     private function reporteProductos($fechaInicio, $fechaFin)
     {
         try {
+            // CORREGIR FECHAS
+            $fechaInicioCarbon = Carbon::parse($fechaInicio)->startOfDay();
+            $fechaFinCarbon = Carbon::parse($fechaFin)->endOfDay();
+
             // Productos más vendidos
-            $productosMasVendidos = $this->obtenerProductosMasVendidos($fechaInicio, $fechaFin);
+            $productosMasVendidos = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
+                ->join('productos', 'ventas.producto_id', '=', 'productos.id')
+                ->selectRaw('productos.id, productos.nombre, SUM(ventas.cantidad) as cantidad_vendida, SUM(ventas.total) as total_ingresos')
+                ->groupBy('productos.id', 'productos.nombre')
+                ->orderBy('cantidad_vendida', 'desc')
+                ->get();
 
             // Productos por categoría
             $productosPorCategoria = DB::table('productos')
@@ -222,7 +304,10 @@ class ReporteController extends Controller
                 ->get();
 
             // Alertas de stock
-            $alertasStock = $this->obtenerAlertasStock();
+            $alertasStock = Producto::where('stock', '<', 10)
+                ->select('id', 'nombre', 'stock', 'stock_minimo')
+                ->orderBy('stock', 'asc')
+                ->get();
 
             return [
                 'productos_mas_vendidos' => $productosMasVendidos,
@@ -248,7 +333,10 @@ class ReporteController extends Controller
     private function reporteInventario()
     {
         try {
-            $alertasStock = $this->obtenerAlertasStock();
+            $alertasStock = Producto::where('stock', '<', 10)
+                ->select('id', 'nombre', 'stock', 'stock_minimo')
+                ->orderBy('stock', 'asc')
+                ->get();
 
             $productosPorCategoria = DB::table('productos')
                 ->join('categorias', 'productos.categoria_id', '=', 'categorias.id')
@@ -285,12 +373,16 @@ class ReporteController extends Controller
     private function reporteClientes($fechaInicio, $fechaFin)
     {
         try {
+            // CORREGIR FECHAS
+            $fechaInicioCarbon = Carbon::parse($fechaInicio)->startOfDay();
+            $fechaFinCarbon = Carbon::parse($fechaFin)->endOfDay();
+
             // Mejores clientes
-            $mejoresClientes = Cliente::withCount(['ventas' => function($query) use ($fechaInicio, $fechaFin) {
-                $query->whereBetween('fecha_venta', [$fechaInicio, $fechaFin]);
+            $mejoresClientes = Cliente::withCount(['ventas' => function($query) use ($fechaInicioCarbon, $fechaFinCarbon) {
+                $query->whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon]);
             }])
-            ->withSum(['ventas' => function($query) use ($fechaInicio, $fechaFin) {
-                $query->whereBetween('fecha_venta', [$fechaInicio, $fechaFin]);
+            ->withSum(['ventas' => function($query) use ($fechaInicioCarbon, $fechaFinCarbon) {
+                $query->whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon]);
             }], 'total')
             ->orderBy('ventas_count', 'desc')
             ->limit(10)
@@ -303,7 +395,7 @@ class ReporteController extends Controller
                 ->get();
 
             // Clientes nuevos
-            $clientesNuevos = Cliente::whereBetween('created_at', [$fechaInicio, $fechaFin . ' 23:59:59'])->count();
+            $clientesNuevos = Cliente::whereBetween('created_at', [$fechaInicioCarbon, $fechaFinCarbon])->count();
 
             return [
                 'mejores_clientes' => $mejoresClientes,
@@ -326,11 +418,15 @@ class ReporteController extends Controller
         }
     }
 
-    // Métodos auxiliares
+    // MÉTODOS AUXILIARES CORREGIDOS
     private function obtenerProductosMasVendidos($fechaInicio, $fechaFin)
     {
         try {
-            $resultado = Venta::whereBetween('fecha_venta', [$fechaInicio, $fechaFin])
+            // CORREGIR FECHAS
+            $fechaInicioCarbon = Carbon::parse($fechaInicio)->startOfDay();
+            $fechaFinCarbon = Carbon::parse($fechaFin)->endOfDay();
+
+            $resultado = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
                 ->join('productos', 'ventas.producto_id', '=', 'productos.id')
                 ->selectRaw('productos.id, productos.nombre, SUM(ventas.cantidad) as cantidad_vendida, SUM(ventas.total) as total_ingresos')
                 ->groupBy('productos.id', 'productos.nombre')
@@ -360,7 +456,11 @@ class ReporteController extends Controller
 
     private function obtenerMetodosPago($fechaInicio, $fechaFin)
     {
-        $metodos = Pago::whereBetween('fecha', [$fechaInicio, $fechaFin])
+        // CORREGIR FECHAS
+        $fechaInicioCarbon = Carbon::parse($fechaInicio)->startOfDay();
+        $fechaFinCarbon = Carbon::parse($fechaFin)->endOfDay();
+
+        $metodos = Pago::whereBetween('fecha', [$fechaInicioCarbon, $fechaFinCarbon])
             ->selectRaw('tipo_pago as metodo_pago, COUNT(*) as cantidad, SUM(total_pagado) as monto_total')
             ->groupBy('tipo_pago')
             ->orderBy('cantidad', 'desc')
@@ -378,6 +478,7 @@ class ReporteController extends Controller
 
         $datos = $this->generarReporteTiempoReal($tipoReporte, $fechaInicio, $fechaFin);
 
+        // Usar la fachada PDF correctamente
         $pdf = PDF::loadView('reportes.pdf.plantilla', [
             'datos' => $datos,
             'tipoReporte' => $tipoReporte,
@@ -398,6 +499,23 @@ class ReporteController extends Controller
         $fechaFin = $request->get('fecha_fin', now()->format('Y-m-d'));
 
         $datos = $this->generarReporteTiempoReal($tipoReporte, $fechaInicio, $fechaFin);
+
+        return response()->json($datos);
+    }
+
+    /**
+     * Método para debug del sistema
+     */
+    public function debug()
+    {
+        $datos = [
+            'ventas_count' => Venta::count(),
+            'pagos_count' => Pago::count(),
+            'productos_count' => Producto::count(),
+            'clientes_count' => Cliente::count(),
+            'tablas_existentes' => DB::select('SHOW TABLES'),
+            'fecha_servidor' => now()->format('Y-m-d H:i:s')
+        ];
 
         return response()->json($datos);
     }

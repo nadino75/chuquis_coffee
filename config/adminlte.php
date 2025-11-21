@@ -387,6 +387,12 @@ return [
             'icon' => 'fas fa-credit-card',
             'can' => 'ver-proveedor',
         ],
+        [
+            'text' => 'Reportes',
+            'url' => 'reportes',
+            'icon' => 'fas fa-credit-card',
+            'can' => 'ver-proveedor',
+        ],
     ],
 
     /*
