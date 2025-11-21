@@ -11,12 +11,12 @@
 
 @section('content')
     <div class="card">
-        <div class="card-header bg-success d-flex align-items-center">
+        <div class="card-header bg-primary d-flex align-items-center">
             <h5 class="card-title mb-0 text-white flex-grow-1">
                 <i class="fas fa-list mr-1"></i> Historial de Ventas
             </h5>
             @can('crear-venta')
-            <a href="{{ route('ventas.create') }}" class="btn btn-light btn-sm">
+            <a href="{{ route('ventas.create') }}" class="btn btn-dark btn-sm">
                 <i class="fas fa-plus-circle mr-1"></i> Nueva Venta
             </a>
             @endcan
@@ -131,8 +131,8 @@
             font-size: 0.85rem;
             vertical-align: middle;
         }
-        .btn-group .btn { 
-            margin: 0 2px; 
+        .btn-group .btn {
+            margin: 0 2px;
         }
         .badge {
             font-size: 0.75rem;
