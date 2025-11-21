@@ -14,6 +14,10 @@ return new class extends Migration {
             $table->unsignedBigInteger('pago_id');
             $table->decimal('precio', 8, 2)->default(0);
             $table->integer('cantidad')->default(1);
+            
+            // COLUMNAS FALTANTES AGREGADAS:
+            $table->dateTime('fecha_venta')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->decimal('total', 10, 2)->default(0);
 
             $table->foreign('producto_id')->references('id')->on('productos')->onDelete('cascade');
             $table->foreign('cliente_ci')->references('ci')->on('clientes')->onDelete('cascade');

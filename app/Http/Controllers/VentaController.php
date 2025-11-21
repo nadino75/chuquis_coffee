@@ -12,11 +12,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use App\Http\Controllers\Controller;
-
 
 class VentaController extends Controller  
 {
@@ -109,8 +105,8 @@ class VentaController extends Controller
                 // Determinar tipo de pago principal
                 $tipoPagoPrincipal = count($request->tipo_pago) > 1 ? 'mixto' : $request->tipo_pago[0];
 
-                // Crear pago principal con recibo más corto (máximo 20 caracteres)
-                $recibo = 'RC-' . date('His') . rand(100, 999); // Ejemplo: RC-052312345
+                // Crear pago principal con recibo más corto
+                $recibo = 'RC-' . date('His') . rand(100, 999);
                 Log::info('Creando pago principal', ['recibo' => $recibo]);
                 
                 $pago = Pago::create([
@@ -123,23 +119,27 @@ class VentaController extends Controller
 
                 Log::info('Pago creado', ['pago_id' => $pago->id]);
 
-                // Crear ventas y reducir stock
+                // Crear una venta por cada producto
                 foreach ($request->productos as $productoCarrito) {
                     $producto = Producto::findOrFail($productoCarrito['id']);
+                    $subtotal = $productoCarrito['precio'] * $productoCarrito['cantidad'];
                     
                     Log::info('Creando venta para producto', [
                         'producto_id' => $productoCarrito['id'],
                         'cantidad' => $productoCarrito['cantidad'],
-                        'precio' => $productoCarrito['precio']
+                        'precio' => $productoCarrito['precio'],
+                        'subtotal' => $subtotal
                     ]);
                     
-                    // Crear registro de venta
+                    // Crear registro de venta (una venta por producto)
                     $venta = Venta::create([
                         'producto_id' => $productoCarrito['id'],
                         'cliente_ci' => $request->cliente_ci,
                         'pago_id' => $pago->id,
                         'precio' => $productoCarrito['precio'],
                         'cantidad' => $productoCarrito['cantidad'],
+                        'fecha_venta' => now(),
+                        'total' => $subtotal,
                     ]);
 
                     Log::info('Venta creada', ['venta_id' => $venta->id]);
@@ -175,40 +175,87 @@ class VentaController extends Controller
 
     public function show($id): View
     {
-        $ventaPermissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
-            ->where("role_has_permissions.role_id",$id)
-            ->get();
         $venta = Venta::with(['producto', 'cliente', 'pago'])->findOrFail($id);
-        return view('venta.show', compact('venta', 'ventaPermissions'));
+        
+        // Obtener todas las ventas con el mismo pago_id para mostrar la venta completa
+        $ventasDelMismoPago = Venta::with('producto')
+            ->where('pago_id', $venta->pago_id)
+            ->get();
+
+        // Obtener permisos del usuario actual
+        $ventaPermissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
+            ->where("role_has_permissions.role_id", auth()->user()->roles->first()->id ?? 0)
+            ->get();
+
+        return view('venta.show', compact('venta', 'ventasDelMismoPago', 'ventaPermissions'));
     }
 
     public function destroy($id): RedirectResponse
     {
         try {
             DB::transaction(function () use ($id) {
-                $venta = Venta::with('producto')->findOrFail($id);
+                $venta = Venta::with(['producto', 'pago'])->findOrFail($id);
                 
                 // Aumentar stock del producto antes de eliminar
                 if ($venta->producto) {
                     $venta->producto->stock += $venta->cantidad;
                     $venta->producto->save();
+                    Log::info("Stock restaurado para producto: {$venta->producto->nombre}");
                 }
                 
-                // Eliminar pago si existe
-                if ($venta->pago) {
-                    $venta->pago()->delete();
+                // Verificar si hay más ventas con el mismo pago_id
+                $otrasVentasConMismoPago = Venta::where('pago_id', $venta->pago_id)
+                    ->where('id', '!=', $venta->id)
+                    ->exists();
+                
+                Log::info("Otras ventas con mismo pago: " . ($otrasVentasConMismoPago ? 'Sí' : 'No'));
+                
+                // Eliminar pago solo si no hay más ventas asociadas
+                if (!$otrasVentasConMismoPago && $venta->pago) {
+                    $venta->pago->delete();
+                    Log::info("Pago eliminado: {$venta->pago->id}");
                 }
                 
                 // Eliminar venta
                 $venta->delete();
+                Log::info("Venta eliminada: {$venta->id}");
             });
 
             return Redirect::route('ventas.index')
                 ->with('success', 'Venta eliminada exitosamente y stock restaurado.');
 
         } catch (\Exception $e) {
+            Log::error('Error al eliminar venta: ' . $e->getMessage());
             return Redirect::route('ventas.index')
                 ->with('error', 'Error al eliminar la venta: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Método adicional para obtener ventas por cliente
+     */
+    public function ventasPorCliente($clienteCi): View
+    {
+        $cliente = Cliente::findOrFail($clienteCi);
+        $ventas = Venta::with(['producto', 'pago'])
+            ->where('cliente_ci', $clienteCi)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('venta.por-cliente', compact('ventas', 'cliente'));
+    }
+
+    /**
+     * Método adicional para obtener ventas por producto
+     */
+    public function ventasPorProducto($productoId): View
+    {
+        $producto = Producto::findOrFail($productoId);
+        $ventas = Venta::with(['cliente', 'pago'])
+            ->where('producto_id', $productoId)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('venta.por-producto', compact('ventas', 'producto'));
     }
 }
