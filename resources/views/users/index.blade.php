@@ -49,21 +49,21 @@
                     </td>
                     <td>
                         @can('ver-usuario')
-                        <a class="btn btn-info btn-sm" href="{{ route('users.show',$user->id) }}">
-                            <i class="fa-solid fa-list"></i> Ver
+                        <a class="btn btn-info btn-sm" title="Ver" href="{{ route('users.show',$user->id) }}">
+                            <i class="fa fa-eye"></i> 
                         </a>
                         @endcan
                         @can('editar-usuario')
-                        <a class="btn btn-primary btn-sm" href="{{ route('users.edit',$user->id) }}">
-                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                        <a class="btn btn-primary btn-sm" title="Editar" href="{{ route('users.edit',$user->id) }}">
+                            <i class="fa fa-edit"></i> 
                         </a>
                         @endcan
                         @can('borrar-usuario')
                         <form method="POST" action="{{ route('users.destroy', $user->id) }}" style="display:inline-block;">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm">
-                                <i class="fa-solid fa-trash"></i> Eliminar
+                            <button type="submit" class="btn btn-danger btn-sm" title="Eliminar" onclick="return confirm('¿Desea eliminar este usuario?');">
+                                <i class="fa fa-trash"></i> 
                             </button>
                         </form>
                         @endcan

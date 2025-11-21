@@ -34,13 +34,13 @@
         <td>{{ ++$i }}</td>
         <td>{{ $role->name }}</td>
         <td>
-            <a class="btn btn-info btn-sm" href="{{ route('roles.show', $role->id) }}">
-                <i class="fa-solid fa-list"></i> Ver
+            <a class="btn btn-info btn-sm" title="Ver" href="{{ route('roles.show', $role->id) }}">
+                <i class="fa fa-eye"></i> 
             </a>
 
             @can('editar-rol')
-                <a class="btn btn-primary btn-sm" href="{{ route('roles.edit', $role->id) }}">
-                    <i class="fa-solid fa-pen-to-square"></i> Editar
+                <a class="btn btn-primary btn-sm" title="Editar" href="{{ route('roles.edit', $role->id) }}">
+                    <i class="fa fa-edit"></i> 
                 </a>
             @endcan
 
@@ -49,8 +49,8 @@
                 @csrf
                 @method('DELETE')
 
-                <button type="submit" class="btn btn-danger btn-sm">
-                    <i class="fa-solid fa-trash"></i> Eliminar
+                <button type="submit" class="btn btn-danger btn-sm"  title="Eliminar">
+                    <i class="fa fa-trash"></i> 
                 </button>
             </form>
             @endcan

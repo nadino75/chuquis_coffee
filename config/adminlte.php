@@ -371,7 +371,7 @@ return [
         ],
         [
             'text' => 'Marcas',
-            'url' => 'marca',
+            'url' => 'marcas',
             'icon' => 'fas fa-tags',
             'can' => 'ver-marca',
         ],

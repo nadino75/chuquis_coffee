@@ -47,27 +47,27 @@
                     <td>
                         <!-- Botón Ver -->
                         @can('ver-proveedor')
-                        <button class="btn btn-info btn-sm" data-toggle="modal"
+                        <button class="btn btn-info btn-sm"  title="Ver" data-toggle="modal"
                             data-target="#showProveedoreModal{{ $proveedore->id }}">
-                            <i class="fa fa-eye"></i> Ver
+                            <i class="fa fa-eye"></i> 
                         </button>
                         @endcan
                         <!-- Botón Editar -->
                         @can('editar-proveedor')
-                        <button class="btn btn-warning btn-sm" data-toggle="modal"
+                        <button class="btn btn-warning btn-sm"  title="Editar" data-toggle="modal"
                             data-target="#editProveedoreModal{{ $proveedore->id }}">
-                            <i class="fa fa-edit"></i> Editar
+                            <i class="fa fa-edit"></i> 
                         </button>
                         @endcan
 
                         <!-- Botón Eliminar -->
                         @can('borrar-proveedor')
-                        <form action="{{ route('proveedores.destroy', $proveedore->id) }}" method="POST" style="display:inline;">
+                        <form action="{{ route('proveedores.destroy', $proveedore->id) }}" method="POST"  style="display:inline;">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm"
+                            <button type="submit" class="btn btn-danger btn-sm"  title="Eliminar"
                                 onclick="return confirm('¿Desea eliminar este proveedor?');">
-                                <i class="fa fa-trash"></i> Eliminar
+                                <i class="fa fa-trash"></i> 
                             </button>
                         </form>
                         @endcan
@@ -83,7 +83,7 @@
                                     <i class="fa fa-eye"></i> Detalles del Proveedor
                                 </h5>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                                  <span aria-hidden="true">&times;</span>
+                                    <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
                             <div class="modal-body text-left">

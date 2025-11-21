@@ -42,15 +42,15 @@
                         <!-- Botón Ver -->
                         @can('ver-tipo')
                         <button class="btn btn-info btn-sm" data-toggle="modal"
-                                data-target="#showTipoModal{{ $tipo->id }}">
-                            <i class="fa fa-eye"></i> Ver
+                                data-target="#showTipoModal{{ $tipo->id }}" title="Ver">
+                            <i class="fa fa-eye"></i> 
                         </button>
                         @endcan
                         <!-- Botón Editar -->
                         @can('editar-tipo')
                         <button class="btn btn-warning btn-sm" data-toggle="modal"
-                                data-target="#editTipoModal{{ $tipo->id }}">
-                            <i class="fa fa-edit"></i> Editar
+                                data-target="#editTipoModal{{ $tipo->id }}" title="Editar">
+                            <i class="fa fa-edit"></i> 
                         </button>
                         @endcan
                         @can('borrar-tipo')
@@ -60,8 +60,8 @@
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger btn-sm"
-                                onclick="return confirm('¿Desea eliminar este tipo?');">
-                                <i class="fa fa-trash"></i> Eliminar
+                                onclick="return confirm('¿Desea eliminar este tipo?');" title="Eliminar">
+                                <i class="fa fa-trash"></i> 
                             </button>
                         </form>
                         @endcan

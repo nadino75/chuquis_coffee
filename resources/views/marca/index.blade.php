@@ -37,15 +37,15 @@
                     <td>
                         <!-- Botón Ver -->
                         @can('ver-marca')
-                        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#showMarcaModal{{ $marca->id }}">
-                            <i class="fa fa-eye"></i> Ver
+                        <button class="btn btn-info btn-sm" data-toggle="modal" title="Ver" data-target="#showMarcaModal{{ $marca->id }}">
+                            <i class="fa fa-eye"></i> 
                         </button>
                         @endcan
 
                         <!-- Botón Editar -->
                         @can('editar-marca')
-                        <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#editMarcaModal{{ $marca->id }}">
-                            <i class="fa fa-edit"></i> Editar
+                        <button class="btn btn-success btn-sm" data-toggle="modal" title="Editar" data-target="#editMarcaModal{{ $marca->id }}">
+                            <i class="fa fa-edit"></i> 
                         </button>
                         @endcan
 
@@ -54,8 +54,8 @@
                         <form action="{{ route('marcas.destroy', $marca->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Desea eliminar esta marca?');">
-                                <i class="fa fa-trash"></i> Eliminar
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Desea eliminar esta marca?');" title="Eliminar">
+                                <i class="fa fa-trash"></i> 
                             </button>
                         </form>
                         @endcan
