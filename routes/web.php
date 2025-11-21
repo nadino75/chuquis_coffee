@@ -11,8 +11,7 @@ use App\Http\Controllers\VentaController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\ProveedoresProductoController;
 use App\Http\Controllers\PagoController;
-use App\Http\Controllers\ContactController; // Agregar este use si creas un controlador
-use App\Http\controllers\PagoController;
+use App\Http\Controllers\ContactController; // Agregar este use si creas un controlador para el contacto
 use App\Http\Controllers\ReporteController;
 
 use App\Http\Controllers\UserController;
@@ -65,17 +64,14 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('users', UserController::class);
     
     // Rutas para Reportes
-    Route::get('reportes', [ReporteController::class, 'index'])->name('reportes.index');
-    Route::post('reportes', [ReporteController::class, 'store'])->name('reportes.store'); // ← Agregar esta línea
-    Route::get('reportes/datos', [ReporteController::class, 'obtenerDatosReporte'])->name('reportes.datos');
-    Route::get('reportes/descargar', [ReporteController::class, 'descargarReporte'])->name('reportes.descargar');
-    Route::post('reportes/guardar', [ReporteController::class, 'crearReporteGuardado'])->name('reportes.guardar');
-    Route::get('reportes/{id}', [ReporteController::class, 'mostrarReporteGuardado'])->name('reportes.show');
-
-    
-    Route::get('reportes', [ReporteController::class, 'index'])->name('reportes.index');
-    Route::get('reportes/datos', [ReporteController::class, 'obtenerDatosReporte'])->name('reportes.datos');
-    Route::get('reportes/descargar-pdf', [ReporteController::class, 'descargarPDF'])->name('reportes.descargar-pdf');
-    Route::get('reportes/debug', [ReporteController::class, 'debug'])->name('reportes.debug');
+    // Rutas de reportes
+Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+Route::get('/reportes/datos', [ReporteController::class, 'obtenerDatosReporte'])->name('reportes.datos');
+Route::get('/reportes/descargar-pdf', [ReporteController::class, 'descargarPDF'])->name('reportes.descargar-pdf');
+Route::get('/reportes/debug', [ReporteController::class, 'debug'])->name('reportes.debug');
+// Si necesitas la ruta de reportes guardados, usa una de estas:
+Route::get('/reportes/guardados', [ReporteController::class, 'mostrarReporteGuardado'])->name('reportes.guardados');
+// O
+Route::get('/reportes/guardados', [ReporteController::class, 'reportesGuardados'])->name('reportes.guardados');
     
     });
