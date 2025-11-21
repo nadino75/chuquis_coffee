@@ -439,17 +439,22 @@
                 validarPagos();
             });
 
-            // Calcular cambio para pago simple
+            // Calcular cambio para pago simple - VERSIÓN CORREGIDA
             function calcularCambioSimple() {
                 const montoRecibido = parseFloat($('#monto_recibido').val()) || 0;
                 const cambio = montoRecibido - totalVenta;
                 
-                $('#cambioSimple').text('$' + Math.max(0, cambio).toFixed(2));
+                // CORRECCIÓN: Asegurar que el cambio nunca sea negativo
+                const cambioMostrar = Math.max(0, cambio);
+                
+                $('#cambioSimple').text('$' + cambioMostrar.toFixed(2));
                 
                 if (cambio >= 0) {
                     $('#cambioSimple').removeClass('text-danger').addClass('text-success');
                 } else {
                     $('#cambioSimple').removeClass('text-success').addClass('text-danger');
+                    // CORRECCIÓN ADICIONAL: Mostrar advertencia visual cuando el monto es insuficiente
+                    $('#cambioSimple').text('$0.00 - Insuficiente');
                 }
                 
                 validarPagos();
@@ -496,7 +501,7 @@
                 }
             });
 
-            // Calcular total pagado mixto
+            // Calcular total pagado mixto - VERSIÓN CORREGIDA
             function calcularTotalPagadoMixto() {
                 let totalPagado = 0;
                 $('.monto-pago-mixto').each(function() {
@@ -506,12 +511,16 @@
                 $('#totalPagadoMixto').text('$' + totalPagado.toFixed(2));
                 
                 const cambio = totalPagado - totalVenta;
-                $('#cambioMixto').text('$' + Math.max(0, cambio).toFixed(2));
+                const cambioMostrar = Math.max(0, cambio); // CORRECCIÓN: Evitar valores negativos
+                
+                $('#cambioMixto').text('$' + cambioMostrar.toFixed(2));
                 
                 if (cambio >= 0) {
                     $('#cambioMixto').removeClass('text-danger').addClass('text-success');
                 } else {
                     $('#cambioMixto').removeClass('text-success').addClass('text-danger');
+                    // CORRECCIÓN ADICIONAL: Mostrar advertencia visual
+                    $('#cambioMixto').text('$0.00 - Insuficiente');
                 }
                 
                 validarPagos();
