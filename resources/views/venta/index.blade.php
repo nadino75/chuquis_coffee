@@ -15,9 +15,11 @@
             <h5 class="card-title mb-0 text-white flex-grow-1">
                 <i class="fas fa-list mr-1"></i> Historial de Ventas
             </h5>
+            @can('crear-venta')
             <a href="{{ route('ventas.create') }}" class="btn btn-light btn-sm">
                 <i class="fas fa-plus-circle mr-1"></i> Nueva Venta
             </a>
+            @endcan
         </div>
 
         <div class="card-body">
@@ -85,6 +87,7 @@
                                         <a href="{{ route('ventas.show', $venta->id) }}" class="btn btn-info btn-sm">
                                             <i class="fas fa-eye"></i> Ver
                                         </a>
+                                        @can('borrar-venta')
                                         <form action="{{ route('ventas.destroy', $venta->id) }}" method="POST" 
                                               class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar esta venta? Se restaurará el stock del producto.');">
                                             @csrf
@@ -93,6 +96,7 @@
                                                 <i class="fas fa-trash"></i> Eliminar
                                             </button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
