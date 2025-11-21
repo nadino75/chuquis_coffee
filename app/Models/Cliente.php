@@ -34,4 +34,10 @@ class Cliente extends Authenticatable
         'ci' => 'string',
         'NIT' => 'string',
     ];
+    
+    public function ventas()
+    {
+        return $this->hasMany(Venta::class, 'cliente_ci', 'ci');
+    }
 }
+

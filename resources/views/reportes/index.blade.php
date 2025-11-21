@@ -38,7 +38,7 @@
                                                     <option value="pagos" {{ $tipoReporte == 'pagos' ? 'selected' : '' }}>Reporte de Pagos</option>
                                                     <option value="productos" {{ $tipoReporte == 'productos' ? 'selected' : '' }}>Reporte de Productos</option>
                                                     <option value="inventario" {{ $tipoReporte == 'inventario' ? 'selected' : '' }}>Reporte de Inventario</option>
-                                                    <option value="clientes" {{ $tipoReporte == 'clientes' ? 'selected' : '' }}>Reporte de Clientes</option>
+                                                    
                                                 </select>
                                             </div>
                                         </div>
