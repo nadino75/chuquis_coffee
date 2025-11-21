@@ -59,16 +59,16 @@
                                     <div class="btn-group" role="group">
                                         <!-- Botón Ver -->
                                          @can('ver-cliente')
-                                        <button class="btn btn-info btn-sm" data-toggle="modal" 
+                                        <button class="btn btn-info btn-sm" data-toggle="modal" title="Ver"
                                                 data-target="#showClienteModal{{ $cliente->ci }}">
-                                            <i class="fas fa-eye"></i> Ver
+                                            <i class="fas fa-eye"></i> 
                                         </button>
                                         @endcan
                                         <!-- Botón Editar -->
                                         @can('editar-cliente')
-                                        <button class="btn btn-warning btn-sm" data-toggle="modal" 
+                                        <button class="btn btn-warning btn-sm" data-toggle="modal" title="Editar"
                                                 data-target="#editClienteModal{{ $cliente->ci }}">
-                                            <i class="fas fa-edit"></i> Editar
+                                            <i class="fas fa-edit"></i> 
                                         </button>
                                         @endcan
 
@@ -78,8 +78,8 @@
                                               class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este cliente?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm">
-                                                <i class="fas fa-trash"></i> Eliminar
+                                            <button type="submit" class="btn btn-danger btn-sm" title="Eliminar">
+                                                <i class="fas fa-trash"></i> 
                                             </button>
                                         </form>
                                         @endcan

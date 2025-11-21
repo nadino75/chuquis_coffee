@@ -38,7 +38,7 @@
                 @foreach($proveedoresProductos as $item)
                 <tr>
                     <td>{{ $loop->iteration + ($proveedoresProductos->currentPage() - 1) * $proveedoresProductos->perPage() }}</td>
-                    <td>{{ $item->proveedor->nombre ?? '-' }}</td>
+                    <td>{{ $item->proveedore->nombre ?? '-' }}</td>
                     <td>{{ $item->producto->nombre ?? '-' }}</td>
                     <td>{{ $item->cantidad }}</td>
                     <td>{{ $item->unidad }}</td>
@@ -48,24 +48,24 @@
                     <td>{{ $item->marca->nombre ?? '-' }}</td>
                     <td>
                         <!-- Botón Ver -->
-                        <button class="btn btn-info btn-sm" data-toggle="modal"
+                        <button class="btn btn-info btn-sm"  title="Ver" data-toggle="modal" 
                                 data-target="#showProveedoresProductoModal{{ $item->id }}">
-                            <i class="fa fa-eye"></i> Ver
+                            <i class="fa fa-eye"></i> 
                         </button>
 
                         <!-- Botón Editar -->
-                        <button class="btn btn-warning btn-sm" data-toggle="modal"
+                        <button class="btn btn-warning btn-sm"  title="Editar" data-toggle="modal"
                                 data-target="#editProveedoresProductoModal{{ $item->id }}">
-                            <i class="fa fa-edit"></i> Editar
+                            <i class="fa fa-edit"></i> 
                         </button>
 
                         <!-- Botón Eliminar -->
                         <form action="{{ route('proveedores_productos.destroy', $item->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm"
+                            <button type="submit" class="btn btn-danger btn-sm"  title="Eliminar"
                                 onclick="return confirm('¿Desea eliminar este registro?');">
-                                <i class="fa fa-trash"></i> Eliminar
+                                <i class="fa fa-trash"></i> 
                             </button>
                         </form>
                     </td>

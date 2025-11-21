@@ -369,6 +369,24 @@ return [
             'icon' => 'fas fa-shopping-cart',
             'can' => 'ver-rol',
         ],
+        [
+            'text' => 'Marcas',
+            'url' => 'marcas',
+            'icon' => 'fas fa-tags',
+            'can' => 'ver-marca',
+        ],
+        [
+            'text' => 'Pagos',
+            'url' => 'pagos',
+            'icon' => 'fas fa-credit-card',
+            'can' => 'ver-pago',
+        ],
+        [
+            'text' => 'Proveedores Productos',
+            'url' => 'proveedores_productos',
+            'icon' => 'fas fa-credit-card',
+            'can' => 'ver-proveedor',
+        ],
     ],
 
     /*

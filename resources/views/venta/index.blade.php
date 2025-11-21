@@ -84,16 +84,16 @@
                                 <td class="text-center">{{ $venta->created_at->format('d/m/Y H:i') }}</td>
                                 <td class="text-center">
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('ventas.show', $venta->id) }}" class="btn btn-info btn-sm">
-                                            <i class="fas fa-eye"></i> Ver
+                                        <a href="{{ route('ventas.show', $venta->id) }}" class="btn btn-info btn-sm" title="Ver">
+                                            <i class="fas fa-eye"></i> 
                                         </a>
                                         @can('borrar-venta')
                                         <form action="{{ route('ventas.destroy', $venta->id) }}" method="POST" 
-                                              class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar esta venta? Se restaurará el stock del producto.');">
+                                                class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar esta venta? Se restaurará el stock del producto.');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm">
-                                                <i class="fas fa-trash"></i> Eliminar
+                                            <button type="submit" class="btn btn-danger btn-sm" title="Eliminar">
+                                                <i class="fas fa-trash"></i> 
                                             </button>
                                         </form>
                                         @endcan

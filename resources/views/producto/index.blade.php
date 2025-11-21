@@ -39,16 +39,16 @@
                             <td>{{ $producto->categoria->nombre }}</td>
                             <td>
                                 @can('ver-producto')
-                                <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#showProductoModal{{ $producto->id }}"><i class="fa fa-eye"></i></button>
+                                <button class="btn btn-info btn-sm"  title="Ver" data-toggle="modal" data-target="#showProductoModal{{ $producto->id }}"><i class="fa fa-eye"></i></button>
                                 @endcan
                                 @can('editar-producto')
-                                <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#editProductoModal{{ $producto->id }}"><i class="fa fa-edit"></i></button>
+                                <button class="btn btn-success btn-sm"  title="Editar" data-toggle="modal" data-target="#editProductoModal{{ $producto->id }}"><i class="fa fa-edit"></i></button>
                                 @endcan
                                 @can('borrar-producto')
                                 <form action="{{ route('productos.destroy', $producto->id) }}" method="POST" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('¿Eliminar producto?') ? this.closest('form').submit() : false;">
+                                    <button class="btn btn-danger btn-sm"  title="Eliminar" onclick="event.preventDefault(); confirm('¿Eliminar producto?') ? this.closest('form').submit() : false;">
                                         <i class="fa fa-trash"></i>
                                     </button>
                                 </form>

@@ -45,16 +45,16 @@
                     <td>
                         <!-- Botón Ver -->
                         @can('ver-categoria')
-                        <button class="btn btn-info btn-sm" data-toggle="modal"
+                        <button class="btn btn-info btn-sm" data-toggle="modal" title="Ver"
                                 data-target="#showCategoriaModal{{ $categoria->id }}">
-                            <i class="fa fa-eye"></i> Ver
+                            <i class="fa fa-eye"></i>
                         </button>
                         @endcan
                         <!-- Botón Editar -->
                         @can('editar-categoria')
-                        <button class="btn btn-warning btn-sm" data-toggle="modal"
+                        <button class="btn btn-warning btn-sm" data-toggle="modal" title="Editar"
                                 data-target="#editCategoriaModal{{ $categoria->id }}">
-                            <i class="fa fa-edit"></i> Editar
+                            <i class="fa fa-edit"></i> 
                         </button>
                         @endcan
                         <!-- Botón Eliminar -->
@@ -62,9 +62,9 @@
                         <form action="{{ route('categorias.destroy', $categoria->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm"
+                            <button type="submit" class="btn btn-danger btn-sm" title="Eliminar"
                                 onclick="return confirm('¿Desea eliminar esta categoría?');">
-                                <i class="fa fa-trash"></i> Eliminar
+                                <i class="fa fa-trash"></i> 
                             </button>
                         </form>
                         @endcan
