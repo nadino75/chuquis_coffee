@@ -11,11 +11,11 @@ use App\Http\Controllers\VentaController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\ProveedoresProductoController;
 use App\Http\Controllers\PagoController;
-use App\Http\Controllers\ContactController; // Agregar este use si creas un controlador para el contacto
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ReporteController;
-
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,10 +34,11 @@ Route::post('/contact', function () {
     return back()->with('success', 'Mensaje enviado correctamente');
 })->name('contact.submit');
 
-// Dashboard protegido
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Dashboard protegido - ACTUALIZADO para usar el DashboardController
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+
+// API para datos del dashboard
+Route::get('/dashboard/datos', [DashboardController::class, 'obtenerDatosDashboard'])->middleware(['auth'])->name('dashboard.datos');
 
 // Perfil del usuario (solo autenticado)
 Route::middleware('auth')->group(function () {
@@ -64,14 +65,16 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('users', UserController::class);
     
     // Rutas para Reportes
-    // Rutas de reportes
-Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
-Route::get('/reportes/datos', [ReporteController::class, 'obtenerDatosReporte'])->name('reportes.datos');
-Route::get('/reportes/descargar-pdf', [ReporteController::class, 'descargarPDF'])->name('reportes.descargar-pdf');
-Route::get('/reportes/debug', [ReporteController::class, 'debug'])->name('reportes.debug');
-// Si necesitas la ruta de reportes guardados, usa una de estas:
-Route::get('/reportes/guardados', [ReporteController::class, 'mostrarReporteGuardado'])->name('reportes.guardados');
-// O
-Route::get('/reportes/guardados', [ReporteController::class, 'reportesGuardados'])->name('reportes.guardados');
+    Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+    Route::get('/reportes/datos', [ReporteController::class, 'obtenerDatosReporte'])->name('reportes.datos');
+    Route::get('/reportes/descargar-pdf', [ReporteController::class, 'descargarPDF'])->name('reportes.descargar-pdf');
+    Route::get('/reportes/debug', [ReporteController::class, 'debug'])->name('reportes.debug');
     
-    });
+    // Ruta para reportes guardados
+    Route::get('/reportes/guardados', [ReporteController::class, 'reportesGuardados'])->name('reportes.guardados');
+    
+    // Rutas adicionales para ventas
+    Route::get('ventas/cliente/{clienteCi}', [VentaController::class, 'ventasPorCliente'])->name('ventas.por-cliente');
+    Route::get('ventas/producto/{productoId}', [VentaController::class, 'ventasPorProducto'])->name('ventas.por-producto');
+});
+
