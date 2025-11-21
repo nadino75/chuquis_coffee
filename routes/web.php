@@ -62,10 +62,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('pagos', PagoController::class);
     Route::resource('roles', RoleController::class);
     Route::resource('users', UserController::class);
-    // routes/web.php
+    
+    // Rutas para Reportes
     Route::get('reportes', [ReporteController::class, 'index'])->name('reportes.index');
+    Route::post('reportes', [ReporteController::class, 'store'])->name('reportes.store'); // ← Agregar esta línea
     Route::get('reportes/datos', [ReporteController::class, 'obtenerDatosReporte'])->name('reportes.datos');
     Route::get('reportes/descargar', [ReporteController::class, 'descargarReporte'])->name('reportes.descargar');
     Route::post('reportes/guardar', [ReporteController::class, 'crearReporteGuardado'])->name('reportes.guardar');
+    Route::get('reportes/{id}', [ReporteController::class, 'mostrarReporteGuardado'])->name('reportes.show');
     
     });

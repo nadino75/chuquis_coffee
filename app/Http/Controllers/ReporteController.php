@@ -370,4 +370,5 @@ class ReporteController extends Controller
             'reporte' => $reporte
         ]);
     }
+    
 }
