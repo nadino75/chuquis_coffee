@@ -50,11 +50,11 @@
                                             name="tipo" 
                                             required>
                                         <option value="">Seleccione un tipo</option>
-                                        <option value="ventas" {{ old('tipo') == 'ventas' ? 'selected' : '' }}>Reporte de Ventas</option>
-                                        <option value="pagos" {{ old('tipo') == 'pagos' ? 'selected' : '' }}>Reporte de Pagos</option>
-                                        <option value="productos" {{ old('tipo') == 'productos' ? 'selected' : '' }}>Reporte de Productos</option>
-                                        <option value="inventario" {{ old('tipo') == 'inventario' ? 'selected' : '' }}>Reporte de Inventario</option>
-                                        <option value="clientes" {{ old('tipo') == 'clientes' ? 'selected' : '' }}>Reporte de Clientes</option>
+                                        <option value="ventas" {{ old('tipo') == 'ventas' ? 'selected' : '' }}>Ventas</option>
+                                        <option value="pagos" {{ old('tipo') == 'pagos' ? 'selected' : '' }}>Pagos</option>
+                                        <option value="productos" {{ old('tipo') == 'productos' ? 'selected' : '' }}>Productos</option>
+                                        <option value="inventario" {{ old('tipo') == 'inventario' ? 'selected' : '' }}>Inventario</option>
+                                        <option value="clientes" {{ old('tipo') == 'clientes' ? 'selected' : '' }}>Clientes</option>
                                     </select>
                                     @error('tipo')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -104,45 +104,31 @@
                             </div>
                         </div>
 
-                        <!-- Filtros adicionales -->
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="usuario_id">Usuario</label>
-                                    <select class="form-control" id="usuario_id" name="usuario_id">
-                                        <option value="">Todos los usuarios</option>
-                                        @foreach($usuarios as $usuario)
-                                            <option value="{{ $usuario->id }}" {{ old('usuario_id') == $usuario->id ? 'selected' : '' }}>
-                                                {{ $usuario->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                        <!-- Campos específicos según el tipo de reporte -->
+                        <div id="campos-ventas" class="campos-tipo" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="venta_id">Venta Específica</label>
+                                        <select class="form-control" id="venta_id" name="venta_id">
+                                            <option value="">Todas las ventas</option>
+                                            <!-- Aquí puedes cargar las ventas desde la base de datos -->
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="cliente_id">Cliente</label>
-                                    <select class="form-control" id="cliente_id" name="cliente_id">
-                                        <option value="">Todos los clientes</option>
-                                        @foreach($clientes as $cliente)
-                                            <option value="{{ $cliente->id }}" {{ old('cliente_id') == $cliente->id ? 'selected' : '' }}>
-                                                {{ $cliente->nombre }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="producto_id">Producto</label>
-                                    <select class="form-control" id="producto_id" name="producto_id">
-                                        <option value="">Todos los productos</option>
-                                        @foreach($productos as $producto)
-                                            <option value="{{ $producto->id }}" {{ old('producto_id') == $producto->id ? 'selected' : '' }}>
-                                                {{ $producto->nombre }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                        </div>
+
+                        <div id="campos-productos" class="campos-tipo" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="producto_id">Producto Específico</label>
+                                        <select class="form-control" id="producto_id" name="producto_id">
+                                            <option value="">Todos los productos</option>
+                                            <!-- Aquí puedes cargar los productos desde la base de datos -->
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -158,4 +144,56 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('js')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tipoSelect = document.getElementById('tipo');
+        const camposTipo = document.querySelectorAll('.campos-tipo');
+
+        function mostrarCamposTipo() {
+            // Ocultar todos los campos primero
+            camposTipo.forEach(campo => {
+                campo.style.display = 'none';
+            });
+
+            // Mostrar campos según el tipo seleccionado
+            const tipoSeleccionado = tipoSelect.value;
+            if (tipoSeleccionado) {
+                const campos = document.getElementById(`campos-${tipoSeleccionado}`);
+                if (campos) {
+                    campos.style.display = 'block';
+                }
+            }
+        }
+
+        // Event listener para cambios en el select de tipo
+        tipoSelect.addEventListener('change', mostrarCamposTipo);
+
+        // Mostrar campos iniciales si hay un valor en old
+        @if(old('tipo'))
+        mostrarCamposTipo();
+        @endif
+
+        // Validación de fechas
+        const fechaInicio = document.getElementById('fecha_inicio');
+        const fechaFin = document.getElementById('fecha_fin');
+
+        if (fechaInicio && fechaFin) {
+            fechaInicio.addEventListener('change', function() {
+                if (this.value) {
+                    fechaFin.min = this.value;
+                }
+            });
+
+            fechaFin.addEventListener('change', function() {
+                if (this.value && fechaInicio.value && this.value < fechaInicio.value) {
+                    alert('La fecha fin no puede ser anterior a la fecha inicio');
+                    this.value = '';
+                }
+            });
+        }
+    });
+</script>
 @endsection
