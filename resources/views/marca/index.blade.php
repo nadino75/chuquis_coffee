@@ -47,6 +47,7 @@
                         <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#editMarcaModal{{ $marca->id }}">
                             <i class="fa fa-edit"></i> Editar
                         </button>
+                        @endcan
 
                         <!-- Botón Eliminar -->
                         @can('borrar-marca')

@@ -51,7 +51,11 @@ class PermissionTableSeeder extends Seeder
             'ver-rol',
             'crear-rol',
             'editar-rol',
-            'borrar-rol'
+            'borrar-rol',
+            'ver-marca',
+            'crear-marca',
+            'editar-marca',
+            'borrar-marca',
         ];
         foreach ($Permissions as $permission) {
             Permission::create(['name' => $permission]);

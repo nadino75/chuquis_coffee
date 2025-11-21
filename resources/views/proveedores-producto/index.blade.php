@@ -38,7 +38,7 @@
                 @foreach($proveedoresProductos as $item)
                 <tr>
                     <td>{{ $loop->iteration + ($proveedoresProductos->currentPage() - 1) * $proveedoresProductos->perPage() }}</td>
-                    <td>{{ $item->proveedor->nombre ?? '-' }}</td>
+                    <td>{{ $item->proveedore->nombre ?? '-' }}</td>
                     <td>{{ $item->producto->nombre ?? '-' }}</td>
                     <td>{{ $item->cantidad }}</td>
                     <td>{{ $item->unidad }}</td>
