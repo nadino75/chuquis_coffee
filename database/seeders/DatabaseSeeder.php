@@ -24,6 +24,9 @@ class DatabaseSeeder extends Seeder
             ProveedorSeeder::class,
             ProductoSeeder::class,
             ProveedorProductoSeeder::class,
+            UserGerenteSeeder::class,
+            UserVentasSeeder::class,
+            UserVistasSeeder::class,
         ]);
         /* User::factory()->create([
             'name' => 'Test User',
