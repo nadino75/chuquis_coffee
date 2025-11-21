@@ -257,7 +257,7 @@ return [
     */
 
     'use_route_url' => false,
-    'dashboard_url' => 'home',
+    'dashboard_url' => 'dashboard',
     'logout_url' => 'logout',
     'login_url' => 'login',
     'register_url' => 'register',
@@ -319,7 +319,13 @@ return [
             'text' => 'blog',
             'url' => 'admin/blog',
             'can' => 'manage-blog',
-        ],       
+        ],
+        [
+            'text' => 'Dashboard',
+            'url' => 'dashboard',
+            'icon' => 'fas fa-tachometer-alt',
+            'can' => 'ver-proveedor',
+        ],
         [
             'text' => 'Proveedores',
             'url' => 'proveedores',
@@ -329,7 +335,7 @@ return [
         [
             'text' => 'Categorias',
             'url' => 'categorias',
-            'icon' => 'fas fa-tags',
+            'icon' => 'fas fa-th-large',
             'can' => 'ver-categoria',
         ],
         
@@ -342,7 +348,7 @@ return [
         [
             'text' => 'Tipos',
             'url' => 'tipos',
-            'icon' => 'fas fa-users',
+            'icon' => 'fas fa-tags',
             'can' => 'ver-tipo',
         ],
         [
@@ -360,13 +366,13 @@ return [
         [
             'text' => 'Usuarios',
             'url' => 'users',
-            'icon' => 'fas fa-shopping-cart',
+            'icon' => 'fas fa-users-cog',
             'can' => 'ver-usuario',
         ],
         [
             'text' => 'Roles',
             'url' => 'roles',
-            'icon' => 'fas fa-shopping-cart',
+            'icon' => 'fas fa-user-shield',
             'can' => 'ver-rol',
         ],
         [
@@ -384,13 +390,13 @@ return [
         [
             'text' => 'Proveedores Productos',
             'url' => 'proveedores_productos',
-            'icon' => 'fas fa-credit-card',
+            'icon' => 'fas fa-link',
             'can' => 'ver-proveedor',
         ],
         [
             'text' => 'Reportes',
             'url' => 'reportes',
-            'icon' => 'fas fa-credit-card',
+            'icon' => 'fas fa-file-alt',
             'can' => 'ver-proveedor',
         ],
     ],
