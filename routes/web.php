@@ -12,6 +12,7 @@ use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\ProveedoresProductoController;
 use App\Http\Controllers\ContactController; // Agregar este use si creas un controlador
 use App\Http\controllers\PagoController;
+use App\Http\Controllers\ReporteController;
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
@@ -61,4 +62,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('pagos', PagoController::class);
     Route::resource('roles', RoleController::class);
     Route::resource('users', UserController::class);
-});
+    // routes/web.php
+    Route::get('reportes', [ReporteController::class, 'index'])->name('reportes.index');
+    Route::get('reportes/datos', [ReporteController::class, 'obtenerDatosReporte'])->name('reportes.datos');
+    Route::get('reportes/descargar', [ReporteController::class, 'descargarReporte'])->name('reportes.descargar');
+    Route::post('reportes/guardar', [ReporteController::class, 'crearReporteGuardado'])->name('reportes.guardar');
+    
+    });
