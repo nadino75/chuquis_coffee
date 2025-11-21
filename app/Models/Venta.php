@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Cliente;
+use App\Models\Pago;
+use App\Models\Producto;
 
 /**
  * Class Venta
