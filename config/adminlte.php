@@ -320,114 +320,55 @@ return [
             'url' => 'admin/blog',
             'can' => 'manage-blog',
         ],
-        
+       
         [
             'text' => 'Proveedores',
             'url' => 'proveedores',
-            'icon' => 'fas fa-truck'
+            'icon' => 'fas fa-truck',
+            'can' => 'ver-proveedor',
         ],
         [
             'text' => 'Categorias',
             'url' => 'categorias',
             'icon' => 'fas fa-tags',
+            'can' => 'ver-categoria',
         ],
         
         [
             'text' => 'Clientes',
             'url' => 'clientes',
             'icon' => 'fas fa-users',
+            'can' => 'ver-cliente',
         ],
         [
             'text' => 'Tipos',
             'url' => 'tipos',
             'icon' => 'fas fa-users',
+            'can' => 'ver-tipo',
         ],
         [
             'text' => 'Productos',
             'url' => 'productos',
             'icon' => 'fas fa-box',
+            'can' => 'ver-producto',
         ],
         [
             'text' => 'Ventas',
             'url' => 'ventas',
             'icon' => 'fas fa-shopping-cart',
+            'can' => 'ver-venta',
         ],
         [
             'text' => 'Usuarios',
             'url' => 'users',
             'icon' => 'fas fa-shopping-cart',
+            'can' => 'ver-usuario',
         ],
         [
             'text' => 'Roles',
             'url' => 'roles',
             'icon' => 'fas fa-shopping-cart',
-        ],
-
-
-        ['header' => 'account_settings'],
-        [
-            'text' => 'profile',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-user',
-        ],
-        [
-            'text' => 'change_password',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-lock',
-        ],
-        [
-            'text' => 'multilevel',
-            'icon' => 'fas fa-fw fa-share',
-            'submenu' => [
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                    'submenu' => [
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                        ],
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                            'submenu' => [
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                ],
-            ],
-        ],
-        ['header' => 'labels'],
-        [
-            'text' => 'important',
-            'icon_color' => 'red',
-            'url' => '#',
-        ],
-        [
-            'text' => 'warning',
-            'icon_color' => 'yellow',
-            'url' => '#',
-        ],
-        [
-            'text' => 'information',
-            'icon_color' => 'cyan',
-            'url' => '#',
+            'can' => 'ver-rol',
         ],
     ],
 
