@@ -21,6 +21,18 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## Docker
+
+This project includes a Docker stack for local development:
+
+1. Copy `.env.example` to `.env` and adjust values if needed.
+2. Start the stack with `docker compose up -d --build`.
+3. Install PHP dependencies inside the app container with `docker compose exec app composer install`.
+4. Generate the application key with `docker compose exec app php artisan key:generate`.
+5. Run migrations with `docker compose exec app php artisan migrate --seed`.
+
+The Vite dev server runs in the `vite` service and is exposed on port `5173`.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
