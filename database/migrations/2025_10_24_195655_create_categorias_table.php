@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('categorias', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre', 100)->unique();
+            $table->string('nombre', 100);
             $table->text('descripcion')->nullable();
             $table->unsignedBigInteger('tipo_id');
             $table->unsignedBigInteger('categoria_id')->nullable();

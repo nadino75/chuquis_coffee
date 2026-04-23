@@ -22,12 +22,12 @@ class ProveedoresProductoRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'proveedore_id' => 'required',
-			'producto_id' => 'required',
-			'cantidad' => 'required',
-			'precio' => 'required',
-			'fecha_compra' => 'required',
-			'marca_id' => 'required',
+            'proveedore_id' => 'required|exists:proveedores,id',
+            'producto_id' => 'required|exists:productos,id',
+            'cantidad' => 'required|numeric|min:0',
+            'fecha_compra' => 'required|date',
+            'fecha_vencimiento' => 'required|date|after_or_equal:fecha_compra',
+            'marca_id' => 'required|exists:marcas,id',
         ];
     }
 }

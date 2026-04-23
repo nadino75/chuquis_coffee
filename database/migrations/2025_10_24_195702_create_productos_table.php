@@ -10,12 +10,12 @@ return new class extends Migration {
         Schema::create('productos', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 100);
-            $table->text('descripcion')->nullable(); // COLUMNA FALTANTE
+            $table->text('descripcion');
             $table->integer('stock')->default(0);
-            $table->integer('stock_minimo')->default(5); // COLUMNA FALTANTE
-            $table->decimal('precio', 8, 2)->default(0);
+            $table->integer('stock_minimo')->default(5);
+            $table->decimal('precio', 3, 2)->default(0);
             $table->unsignedBigInteger('categoria_id');
-            $table->string('imagen')->nullable(); // COLUMNA FALTANTE
+            $table->string('imagen')->nullable();
 
             $table->foreign('categoria_id')->references('id')->on('categorias')->onDelete('cascade');
 

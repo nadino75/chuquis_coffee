@@ -36,17 +36,17 @@ class ClienteController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        // Validación más flexible para testing
         $request->validate([
-            'ci' => 'required|unique:clientes,ci|max:20',
-            'NIT' => 'nullable|max:13',
+            'ci' => 'required|unique:clientes,ci|max:12',
+            'ci_complemento' => 'nullable|max:3',
+            'nit' => 'nullable|max:20',
             'nombres' => 'required|max:100',
             'apellido_paterno' => 'nullable|max:100',
             'apellido_materno' => 'nullable|max:100',
             'sexo' => 'nullable|in:masculino,femenino',
-            'telefono' => 'nullable|max:15',
-            'celular' => 'required|max:15',
-            'correo' => 'nullable|email|max:100',
+            'telefono' => 'nullable|max:20',
+            'celular' => 'nullable|max:20',
+            'correo' => 'required|email|max:100',
         ]);
 
         try {
@@ -67,25 +67,27 @@ class ClienteController extends Controller
         $clientePermissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
             ->where("role_has_permissions.role_id",$id)
             ->get();
-        return view('clientes.show', compact('cliente','clientePermissions'));
+        return view('cliente.show', compact('cliente','clientePermissions'));
     }
 
     public function update(Request $request, $id): RedirectResponse
     {
+        $cliente = Cliente::findOrFail($id);
+
         $request->validate([
-            'ci' => 'required|max:20|unique:clientes,ci,' . $cliente->ci . ',ci',
-            'NIT' => 'nullable|max:13',
+            'ci' => 'required|max:12|unique:clientes,ci,' . $cliente->id,
+            'ci_complemento' => 'nullable|max:3',
+            'nit' => 'nullable|max:20',
             'nombres' => 'required|max:100',
             'apellido_paterno' => 'nullable|max:100',
             'apellido_materno' => 'nullable|max:100',
             'sexo' => 'nullable|in:masculino,femenino',
-            'telefono' => 'nullable|max:15',
-            'celular' => 'required|max:15',
-            'correo' => 'nullable|email|max:100',
+            'telefono' => 'nullable|max:20',
+            'celular' => 'nullable|max:20',
+            'correo' => 'required|email|max:100',
         ]);
 
         try {
-            $cliente = Cliente::find($id); //agregado para obtener el cliente
             $cliente->update($request->all());
             return redirect()->route('clientes.index')
                 ->with('success', 'Cliente actualizado correctamente.');
@@ -100,7 +102,7 @@ class ClienteController extends Controller
     public function destroy($id): RedirectResponse
     {
         try {
-            $cliente = Cliente::find($id);
+            $cliente = Cliente::findOrFail($id);
             $cliente->delete();
             return redirect()->route('clientes.index')
                 ->with('success', 'Cliente eliminado correctamente.');

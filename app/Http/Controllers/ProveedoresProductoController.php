@@ -19,21 +19,17 @@ class ProveedoresProductoController extends Controller
      */
     public function index(Request $request): View
     {
-        // Cargar registros con relaciones
         $proveedoresProductos = ProveedoresProducto::with(['proveedore', 'producto', 'marca'])->paginate();
 
-        // Datos para los selects de los modales
         $proveedores = Proveedore::all();
         $productos = Producto::all();
         $marcas = Marca::all();
-        $unidades = ['unidad', 'kilogramos', 'litros', 'caja', 'bolsa'];
 
         return view('proveedores-producto.index', compact(
             'proveedoresProductos',
             'proveedores',
             'productos',
-            'marcas',
-            'unidades'
+            'marcas'
         ))->with('i', ($request->input('page', 1) - 1) * $proveedoresProductos->perPage());
     }
 
@@ -42,9 +38,7 @@ class ProveedoresProductoController extends Controller
      */
     public function store(ProveedoresProductoRequest $request): RedirectResponse
     {
-        $data = $request->validated();
-        $data['unidad'] = $request->input('unidad', 'unidad'); // Valor por defecto
-        ProveedoresProducto::create($data);
+        ProveedoresProducto::create($request->validated());
 
         return Redirect::route('proveedores_productos.index')
             ->with('success', 'Registro creado exitosamente.');
@@ -66,14 +60,12 @@ class ProveedoresProductoController extends Controller
         $proveedores = Proveedore::all();
         $productos = Producto::all();
         $marcas = Marca::all();
-        $unidades = ['unidad', 'kilogramos', 'litros', 'caja', 'bolsa'];
 
         return view('proveedores-producto.edit', compact(
             'proveedoresProducto',
             'proveedores',
             'productos',
-            'marcas',
-            'unidades'
+            'marcas'
         ));
     }
 
@@ -82,9 +74,7 @@ class ProveedoresProductoController extends Controller
      */
     public function update(ProveedoresProductoRequest $request, ProveedoresProducto $proveedoresProducto): RedirectResponse
     {
-        $data = $request->validated();
-        $data['unidad'] = $request->input('unidad', 'unidad'); // Valor por defecto
-        $proveedoresProducto->update($data);
+        $proveedoresProducto->update($request->validated());
 
         return Redirect::route('proveedores_productos.index')
             ->with('success', 'Registro actualizado exitosamente.');

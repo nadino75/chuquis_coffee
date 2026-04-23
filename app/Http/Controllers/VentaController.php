@@ -6,6 +6,7 @@ use App\Models\Venta;
 use App\Models\Producto;
 use App\Models\Cliente;
 use App\Models\Pago;
+use App\Models\VentaDetalle;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -26,9 +27,14 @@ class VentaController extends Controller
 
     public function index(Request $request): View
     {
-        $ventas = Venta::with(['producto', 'cliente', 'pago'])
+        $ventas = Venta::with(['cliente', 'pago', 'ventaProductos.producto'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
+
+        $ventas->getCollection()->transform(function ($venta) {
+            $this->hidratarCamposLegacyVenta($venta);
+            return $venta;
+        });
 
         return view('venta.index', compact('ventas'))
             ->with('i', ($request->input('page', 1) - 1) * $ventas->perPage());
@@ -105,6 +111,8 @@ class VentaController extends Controller
                 // Determinar tipo de pago principal
                 $tipoPagoPrincipal = count($request->tipo_pago) > 1 ? 'mixto' : $request->tipo_pago[0];
 
+                $cliente = Cliente::where('ci', $request->cliente_ci)->firstOrFail();
+
                 // Crear pago principal con recibo más corto
                 $recibo = 'RC-' . date('His') . rand(100, 999);
                 Log::info('Creando pago principal', ['recibo' => $recibo]);
@@ -119,7 +127,16 @@ class VentaController extends Controller
 
                 Log::info('Pago creado', ['pago_id' => $pago->id]);
 
-                // Crear una venta por cada producto
+                // Crear cabecera de venta
+                $venta = Venta::create([
+                    'fecha_venta' => now()->toDateString(),
+                    'suma_total' => $totalVenta,
+                    'cliente_id' => $cliente->id,
+                    'pago_id' => $pago->id,
+                    'detalles' => 'Venta generada desde punto de venta',
+                ]);
+
+                // Crear detalle de venta por cada producto
                 foreach ($request->productos as $productoCarrito) {
                     $producto = Producto::findOrFail($productoCarrito['id']);
                     $subtotal = $productoCarrito['precio'] * $productoCarrito['cantidad'];
@@ -131,18 +148,12 @@ class VentaController extends Controller
                         'subtotal' => $subtotal
                     ]);
                     
-                    // Crear registro de venta (una venta por producto)
-                    $venta = Venta::create([
-                        'producto_id' => $productoCarrito['id'],
-                        'cliente_ci' => $request->cliente_ci,
-                        'pago_id' => $pago->id,
+                    VentaDetalle::create([
+                        'id_producto' => $productoCarrito['id'],
+                        'id_venta' => $venta->id,
                         'precio' => $productoCarrito['precio'],
                         'cantidad' => $productoCarrito['cantidad'],
-                        'fecha_venta' => now(),
-                        'total' => $subtotal,
                     ]);
-
-                    Log::info('Venta creada', ['venta_id' => $venta->id]);
 
                     // Reducir stock del producto
                     $stockAnterior = $producto->stock;
@@ -175,12 +186,17 @@ class VentaController extends Controller
 
     public function show($id): View
     {
-        $venta = Venta::with(['producto', 'cliente', 'pago'])->findOrFail($id);
+        $venta = Venta::with(['cliente', 'pago', 'ventaProductos.producto'])->findOrFail($id);
+        $this->hidratarCamposLegacyVenta($venta);
         
         // Obtener todas las ventas con el mismo pago_id para mostrar la venta completa
-        $ventasDelMismoPago = Venta::with('producto')
+        $ventasDelMismoPago = Venta::with('ventaProductos.producto')
             ->where('pago_id', $venta->pago_id)
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                $this->hidratarCamposLegacyVenta($item);
+                return $item;
+            });
 
         // Obtener permisos del usuario actual
         $ventaPermissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
@@ -194,13 +210,15 @@ class VentaController extends Controller
     {
         try {
             DB::transaction(function () use ($id) {
-                $venta = Venta::with(['producto', 'pago'])->findOrFail($id);
+                $venta = Venta::with(['ventaProductos.producto', 'pago'])->findOrFail($id);
                 
-                // Aumentar stock del producto antes de eliminar
-                if ($venta->producto) {
-                    $venta->producto->stock += $venta->cantidad;
-                    $venta->producto->save();
-                    Log::info("Stock restaurado para producto: {$venta->producto->nombre}");
+                // Restaurar stock de cada item del detalle
+                foreach ($venta->ventaProductos as $detalle) {
+                    if ($detalle->producto) {
+                        $detalle->producto->stock += $detalle->cantidad;
+                        $detalle->producto->save();
+                        Log::info("Stock restaurado para producto: {$detalle->producto->nombre}");
+                    }
                 }
                 
                 // Verificar si hay más ventas con el mismo pago_id
@@ -236,13 +254,18 @@ class VentaController extends Controller
      */
     public function ventasPorCliente($clienteCi): View
     {
-        $cliente = Cliente::findOrFail($clienteCi);
-        $ventas = Venta::with(['producto', 'pago'])
-            ->where('cliente_ci', $clienteCi)
+        $cliente = Cliente::where('ci', $clienteCi)->firstOrFail();
+        $ventas = Venta::with(['pago', 'ventaProductos.producto'])
+            ->where('cliente_id', $cliente->id)
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('venta.por-cliente', compact('ventas', 'cliente'));
+        $ventas->getCollection()->transform(function ($venta) {
+            $this->hidratarCamposLegacyVenta($venta);
+            return $venta;
+        });
+
+        return view('venta.index', compact('ventas'));
     }
 
     /**
@@ -251,11 +274,35 @@ class VentaController extends Controller
     public function ventasPorProducto($productoId): View
     {
         $producto = Producto::findOrFail($productoId);
-        $ventas = Venta::with(['cliente', 'pago'])
-            ->where('producto_id', $productoId)
+        $ventas = Venta::with(['cliente', 'pago', 'ventaProductos.producto'])
+            ->whereHas('ventaProductos', function ($query) use ($productoId) {
+                $query->where('id_producto', $productoId);
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('venta.por-producto', compact('ventas', 'producto'));
+        $ventas->getCollection()->transform(function ($venta) {
+            $this->hidratarCamposLegacyVenta($venta);
+            return $venta;
+        });
+
+        return view('venta.index', compact('ventas'));
+    }
+
+    private function hidratarCamposLegacyVenta(Venta $venta): void
+    {
+        $detalle = $venta->ventaProductos->first();
+
+        if ($detalle && $detalle->producto) {
+            $venta->setRelation('producto', $detalle->producto);
+            $venta->setAttribute('cantidad', $detalle->cantidad);
+            $venta->setAttribute('precio', $detalle->precio);
+        } else {
+            $venta->setAttribute('cantidad', 0);
+            $venta->setAttribute('precio', 0);
+        }
+
+        $venta->setAttribute('cliente_ci', optional($venta->cliente)->ci);
+        $venta->setAttribute('total', $venta->suma_total);
     }
 }

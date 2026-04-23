@@ -14,13 +14,11 @@ class Cliente extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles;
 
-    protected $primaryKey = 'ci';
-    public $incrementing = false;
-    protected $keyType = 'string';
-
     protected $fillable = [
+        'id',
         'ci',
-        'NIT',
+        'ci_complemento',
+        'nit',
         'nombres',
         'apellido_paterno',
         'apellido_materno',
@@ -31,13 +29,19 @@ class Cliente extends Authenticatable
     ];
 
     protected $casts = [
+        'id' => 'integer',
         'ci' => 'string',
-        'NIT' => 'string',
+        'nit' => 'string',
     ];
     
     public function ventas()
     {
-        return $this->hasMany(Venta::class, 'cliente_ci', 'ci');
+        return $this->hasMany(Venta::class, 'cliente_id', 'id');
+    }
+
+    public function pagos()
+    {
+        return $this->hasMany(Pago::class, 'cliente_ci', 'ci');
     }
 }
 

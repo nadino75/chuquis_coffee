@@ -10,10 +10,10 @@ return new class extends Migration {
         Schema::create('proveedores', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 255);
-            $table->text('direccion')->nullable();
-            $table->char('telefono', 8)->nullable();
-            $table->char('celular', 8);
-            $table->string('correo', 100)->nullable();
+            $table->string('direccion', 255);
+            $table->string('telefono', 20);
+            $table->string('celular', 20);
+            $table->string('correo', 100);
             $table->timestamps();
         });
     }
