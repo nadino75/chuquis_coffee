@@ -42,7 +42,7 @@ class DashboardController extends Controller
                 'estadisticas' => $this->estadisticasPorDefecto(),
                 'datosGraficos' => $this->datosGraficosPorDefecto(),
                 'alertas' => [],
-                'ventasRecientes' => [],
+                'ventasRecientes' => collect(),
                 'error' => $e->getMessage()
             ]);
         }
@@ -57,14 +57,14 @@ class DashboardController extends Controller
         return [
             'ventas_hoy' => [
                 'total' => Venta::whereDate('fecha_venta', $hoy)->count(),
-                'ingresos' => Venta::whereDate('fecha_venta', $hoy)->sum('total'),
+                'ingresos' => Venta::whereDate('fecha_venta', $hoy)->sum('suma_total'),
                 'icon' => 'fas fa-shopping-cart',
                 'color' => 'info',
                 'titulo' => 'Ventas Hoy'
             ],
             'ventas_mes' => [
                 'total' => Venta::whereBetween('fecha_venta', [$inicioMes, $hoy])->count(),
-                'ingresos' => Venta::whereBetween('fecha_venta', [$inicioMes, $hoy])->sum('total'),
+                'ingresos' => Venta::whereBetween('fecha_venta', [$inicioMes, $hoy])->sum('suma_total'),
                 'icon' => 'fas fa-chart-line',
                 'color' => 'success',
                 'titulo' => 'Ventas Mes'
@@ -88,7 +88,7 @@ class DashboardController extends Controller
                 'titulo' => 'Stock Bajo'
             ],
             'ingresos_totales' => [
-                'total' => Venta::sum('total'),
+                'total' => Venta::sum('suma_total'),
                 'icon' => 'fas fa-money-bill-wave',
                 'color' => 'success',
                 'titulo' => 'Ingresos Totales'
@@ -100,15 +100,16 @@ class DashboardController extends Controller
     {
         // Ventas de los últimos 7 días
         $ventas7Dias = Venta::whereBetween('fecha_venta', [now()->subDays(7), now()])
-            ->selectRaw('DATE(fecha_venta) as fecha, COUNT(*) as cantidad, SUM(total) as total')
+            ->selectRaw('DATE(fecha_venta) as fecha, COUNT(*) as cantidad, SUM(suma_total) as total')
             ->groupBy('fecha')
             ->orderBy('fecha')
             ->get();
 
         // Productos más vendidos (últimos 30 días)
         $productosMasVendidos = Venta::whereBetween('fecha_venta', [now()->subDays(30), now()])
-            ->join('productos', 'ventas.producto_id', '=', 'productos.id')
-            ->selectRaw('productos.nombre, SUM(ventas.cantidad) as cantidad_vendida')
+            ->join('venta_productos', 'ventas.id', '=', 'venta_productos.id_venta')
+            ->join('productos', 'venta_productos.id_producto', '=', 'productos.id')
+            ->selectRaw('productos.nombre, SUM(venta_productos.cantidad) as cantidad_vendida')
             ->groupBy('productos.id', 'productos.nombre')
             ->orderBy('cantidad_vendida', 'desc')
             ->limit(8)
@@ -123,9 +124,10 @@ class DashboardController extends Controller
 
         // Ventas por categoría
         $ventasPorCategoria = Venta::whereBetween('fecha_venta', [now()->subDays(30), now()])
-            ->join('productos', 'ventas.producto_id', '=', 'productos.id')
+            ->join('venta_productos', 'ventas.id', '=', 'venta_productos.id_venta')
+            ->join('productos', 'venta_productos.id_producto', '=', 'productos.id')
             ->join('categorias', 'productos.categoria_id', '=', 'categorias.id')
-            ->selectRaw('categorias.nombre as categoria, COUNT(*) as cantidad, SUM(ventas.total) as total')
+            ->selectRaw('categorias.nombre as categoria, SUM(venta_productos.cantidad) as cantidad, SUM(venta_productos.precio * venta_productos.cantidad) as total')
             ->groupBy('categorias.id', 'categorias.nombre')
             ->orderBy('total', 'desc')
             ->get();
@@ -165,10 +167,17 @@ class DashboardController extends Controller
 
     private function obtenerVentasRecientes()
     {
-        return Venta::with(['producto', 'cliente'])
+        return Venta::with(['cliente', 'ventaProductos.producto'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
-            ->get();
+            ->get()
+            ->map(function ($venta) {
+                $detalle = $venta->ventaProductos->first();
+                if ($detalle && $detalle->producto) {
+                    $venta->setRelation('producto', $detalle->producto);
+                }
+                return $venta;
+            });
     }
 
     private function estadisticasPorDefecto()

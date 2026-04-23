@@ -7,25 +7,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Permission\Traits\HasRoles;
 use App\Models\Cliente;
 use App\Models\Pago;
-use App\Models\Producto;
 
 /**
  * Class Venta
  *
  * @property $id
- * @property $producto_id
- * @property $cliente_ci
- * @property $pago_id
- * @property $precio
- * @property $cantidad
  * @property $fecha_venta
- * @property $total
+ * @property $suma_total
+ * @property $cliente_id
+ * @property $pago_id
+ * @property $detalles
  * @property $created_at
  * @property $updated_at
  *
  * @property Cliente $cliente
  * @property Pago $pago
- * @property Producto $producto
  * @package App
  * @mixin \Illuminate\Database\Eloquent\Builder
  */
@@ -41,19 +37,16 @@ class Venta extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'producto_id', 
-        'cliente_ci', 
-        'pago_id', 
-        'precio', 
-        'cantidad',
         'fecha_venta',
-        'total'
+        'suma_total',
+        'cliente_id',
+        'pago_id',
+        'detalles',
     ];
 
     protected $casts = [
-        'precio' => 'decimal:2',
-        'total' => 'decimal:2',
-        'fecha_venta' => 'date'
+        'fecha_venta' => 'date',
+        'suma_total' => 'decimal:2',
     ];
 
     /**
@@ -61,7 +54,7 @@ class Venta extends Model
      */
     public function cliente()
     {
-        return $this->belongsTo(\App\Models\Cliente::class, 'cliente_ci', 'ci');
+        return $this->belongsTo(\App\Models\Cliente::class, 'cliente_id', 'id');
     }
     
     /**
@@ -71,18 +64,19 @@ class Venta extends Model
     {
         return $this->belongsTo(\App\Models\Pago::class, 'pago_id', 'id');
     }
-    
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function producto()
+
+    public function ventaProductos()
     {
-        return $this->belongsTo(\App\Models\Producto::class, 'producto_id', 'id');
+        return $this->hasMany(\App\Models\VentaDetalle::class, 'id_venta', 'id');
     }
 
-    // Calcular el total automáticamente
-    public function getSubtotalAttribute()
+    public function productos()
     {
-        return $this->precio * $this->cantidad;
+        return $this->belongsToMany(
+            \App\Models\Producto::class,
+            'venta_productos',
+            'id_venta',
+            'id_producto'
+        )->withPivot(['precio', 'cantidad'])->withTimestamps();
     }
 }

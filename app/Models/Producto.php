@@ -17,16 +17,15 @@ class Producto extends Authenticatable
         'descripcion', 
         'precio', 
         'stock',
-        'stock_minimo', // AGREGADO
+        'stock_minimo',
         'categoria_id',
-        'marca_id',
         'imagen'
     ];
 
     protected $casts = [
-        'precio' => 'decimal:2', // AGREGADO
-        'stock' => 'integer', // AGREGADO
-        'stock_minimo' => 'integer' // AGREGADO
+        'precio' => 'decimal:2',
+        'stock' => 'integer',
+        'stock_minimo' => 'integer'
     ];
 
     // Boot method para establecer valores por defecto
@@ -48,10 +47,19 @@ class Producto extends Authenticatable
         return $this->belongsTo(Categoria::class);
     }
 
-    // Relación con ventas
+    public function ventaProductos()
+    {
+        return $this->hasMany(VentaDetalle::class, 'id_producto', 'id');
+    }
+
     public function ventas()
     {
-        return $this->hasMany(Venta::class);
+        return $this->belongsToMany(
+            Venta::class,
+            'venta_productos',
+            'id_producto',
+            'id_venta'
+        )->withPivot(['precio', 'cantidad'])->withTimestamps();
     }
 
     // Método para reducir stock

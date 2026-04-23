@@ -14,9 +14,14 @@ return new class extends Migration
             $table->date('fecha');
             $table->enum('tipo_pago', ['efectivo', 'qr', 'mixto', 'tarjeta', 'transferencia']);
             $table->decimal('total_pagado', 8, 2)->default(0);
-            $table->char('cliente_ci', 12);
+            $table->string('cliente_ci', 12);
+            $table->unsignedBigInteger('pago_mixto_id')->nullable();
 
             $table->foreign('cliente_ci')->references('ci')->on('clientes')->onDelete('cascade');
+            $table->foreign('pago_mixto_id')
+                ->references('id')
+                ->on('pagos')
+                ->onDelete('set null');
 
             $table->timestamps();
         });

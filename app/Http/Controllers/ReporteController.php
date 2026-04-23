@@ -87,16 +87,17 @@ class ReporteController extends Controller
 
             // VERIFICACIÓN DETALLADA CON FECHAS CORREGIDAS
             $totalVentas = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])->count();
-            $ventasEnRango = Venta::with('producto')
+            $ventasEnRango = Venta::with('ventaProductos.producto')
                 ->whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
                 ->get();
 
             \Log::info("VENTAS en rango: {$totalVentas}");
             foreach ($ventasEnRango as $venta) {
-                \Log::info("-> Venta ID: {$venta->id}, Fecha: {$venta->fecha_venta}, Producto: " . ($venta->producto ? $venta->producto->nombre : 'N/A') . ", Total: {$venta->total}");
+                $productoNombre = optional(optional($venta->ventaProductos->first())->producto)->nombre ?? 'N/A';
+                \Log::info("-> Venta ID: {$venta->id}, Fecha: {$venta->fecha_venta}, Producto: {$productoNombre}, Total: {$venta->suma_total}");
             }
 
-            $totalIngresos = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])->sum('total');
+            $totalIngresos = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])->sum('suma_total');
             $totalPagos = Pago::whereBetween('fecha', [$fechaInicioCarbon, $fechaFinCarbon])->count();
             $totalClientes = Cliente::count();
             $totalProductos = Producto::count();
@@ -109,7 +110,7 @@ class ReporteController extends Controller
 
             // VENTAS POR DÍA - USAR RANGO COMPLETO SOLICITADO
             $ventasUltimaSemana = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
-                ->selectRaw('DATE(fecha_venta) as fecha, COUNT(*) as cantidad, SUM(total) as total')
+                ->selectRaw('DATE(fecha_venta) as fecha, COUNT(*) as cantidad, SUM(suma_total) as total')
                 ->groupBy('fecha')
                 ->orderBy('fecha')
                 ->get();
@@ -118,12 +119,13 @@ class ReporteController extends Controller
 
             // PRODUCTOS MÁS VENDIDOS - CON FECHAS CORREGIDAS
             $productosMasVendidos = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
-                ->join('productos', 'ventas.producto_id', '=', 'productos.id')
+                ->join('venta_productos', 'ventas.id', '=', 'venta_productos.id_venta')
+                ->join('productos', 'venta_productos.id_producto', '=', 'productos.id')
                 ->selectRaw('
                     productos.id, 
                     productos.nombre, 
-                    COALESCE(SUM(ventas.cantidad), 0) as cantidad_vendida, 
-                    COALESCE(SUM(ventas.total), 0) as total_ingresos
+                    COALESCE(SUM(venta_productos.cantidad), 0) as cantidad_vendida, 
+                    COALESCE(SUM(venta_productos.precio * venta_productos.cantidad), 0) as total_ingresos
                 ')
                 ->groupBy('productos.id', 'productos.nombre')
                 ->orderBy('cantidad_vendida', 'desc')
@@ -205,7 +207,7 @@ class ReporteController extends Controller
 
             // Ventas por día
             $ventasPorDia = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
-                ->selectRaw('DATE(fecha_venta) as fecha, COUNT(*) as cantidad, SUM(total) as total')
+                ->selectRaw('DATE(fecha_venta) as fecha, COUNT(*) as cantidad, SUM(suma_total) as total')
                 ->groupBy('fecha')
                 ->orderBy('fecha')
                 ->get();
@@ -214,8 +216,9 @@ class ReporteController extends Controller
 
             // Productos más vendidos
             $productosMasVendidos = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
-                ->join('productos', 'ventas.producto_id', '=', 'productos.id')
-                ->selectRaw('productos.id, productos.nombre, SUM(ventas.cantidad) as cantidad_vendida, SUM(ventas.total) as total_ingresos')
+                ->join('venta_productos', 'ventas.id', '=', 'venta_productos.id_venta')
+                ->join('productos', 'venta_productos.id_producto', '=', 'productos.id')
+                ->selectRaw('productos.id, productos.nombre, SUM(venta_productos.cantidad) as cantidad_vendida, SUM(venta_productos.precio * venta_productos.cantidad) as total_ingresos')
                 ->groupBy('productos.id', 'productos.nombre')
                 ->orderBy('cantidad_vendida', 'desc')
                 ->get();
@@ -224,7 +227,7 @@ class ReporteController extends Controller
                 'ventas_por_dia' => $ventasPorDia,
                 'productos_mas_vendidos' => $productosMasVendidos,
                 'total_ventas' => Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])->count(),
-                'total_ingresos' => Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])->sum('total'),
+                'total_ingresos' => Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])->sum('suma_total'),
             ];
 
         } catch (\Exception $e) {
@@ -290,8 +293,9 @@ class ReporteController extends Controller
 
             // Productos más vendidos
             $productosMasVendidos = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
-                ->join('productos', 'ventas.producto_id', '=', 'productos.id')
-                ->selectRaw('productos.id, productos.nombre, SUM(ventas.cantidad) as cantidad_vendida, SUM(ventas.total) as total_ingresos')
+                ->join('venta_productos', 'ventas.id', '=', 'venta_productos.id_venta')
+                ->join('productos', 'venta_productos.id_producto', '=', 'productos.id')
+                ->selectRaw('productos.id, productos.nombre, SUM(venta_productos.cantidad) as cantidad_vendida, SUM(venta_productos.precio * venta_productos.cantidad) as total_ingresos')
                 ->groupBy('productos.id', 'productos.nombre')
                 ->orderBy('cantidad_vendida', 'desc')
                 ->get();
@@ -383,14 +387,14 @@ class ReporteController extends Controller
             }])
             ->withSum(['ventas' => function($query) use ($fechaInicioCarbon, $fechaFinCarbon) {
                 $query->whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon]);
-            }], 'total')
+            }], 'suma_total')
             ->orderBy('ventas_count', 'desc')
             ->limit(10)
             ->get();
 
-            // Clientes por ciudad
-            $clientesPorCiudad = Cliente::selectRaw('ciudad, COUNT(*) as cantidad')
-                ->groupBy('ciudad')
+            // Agrupación de clientes (compatibilidad del reporte)
+            $clientesPorCiudad = Cliente::selectRaw("COALESCE(sexo, 'no definido') as ciudad, COUNT(*) as cantidad")
+                ->groupBy('sexo')
                 ->orderBy('cantidad', 'desc')
                 ->get();
 
@@ -427,8 +431,9 @@ class ReporteController extends Controller
             $fechaFinCarbon = Carbon::parse($fechaFin)->endOfDay();
 
             $resultado = Venta::whereBetween('fecha_venta', [$fechaInicioCarbon, $fechaFinCarbon])
-                ->join('productos', 'ventas.producto_id', '=', 'productos.id')
-                ->selectRaw('productos.id, productos.nombre, SUM(ventas.cantidad) as cantidad_vendida, SUM(ventas.total) as total_ingresos')
+                ->join('venta_productos', 'ventas.id', '=', 'venta_productos.id_venta')
+                ->join('productos', 'venta_productos.id_producto', '=', 'productos.id')
+                ->selectRaw('productos.id, productos.nombre, SUM(venta_productos.cantidad) as cantidad_vendida, SUM(venta_productos.precio * venta_productos.cantidad) as total_ingresos')
                 ->groupBy('productos.id', 'productos.nombre')
                 ->orderBy('cantidad_vendida', 'desc')
                 ->limit(10)

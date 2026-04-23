@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Cliente;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class ClienteSeeder extends Seeder
 {
@@ -12,7 +13,8 @@ class ClienteSeeder extends Seeder
         $clientes = [
             [
                 'ci' => '1234567',
-                'NIT' => '1234567890123',
+                'ci_complemento' => null,
+                'nit' => '1234567890123',
                 'nombres' => 'Juan Carlos',
                 'apellido_paterno' => 'Pérez',
                 'apellido_materno' => 'Gómez',
@@ -23,7 +25,8 @@ class ClienteSeeder extends Seeder
             ],
             [
                 'ci' => '7654321',
-                'NIT' => null,
+                'ci_complemento' => 'A',
+                'nit' => null,
                 'nombres' => 'María Elena',
                 'apellido_paterno' => 'Gutiérrez',
                 'apellido_materno' => 'López',
@@ -34,7 +37,8 @@ class ClienteSeeder extends Seeder
             ],
             [
                 'ci' => '8912345',
-                'NIT' => '8912345678901',
+                'ci_complemento' => null,
+                'nit' => '8912345678901',
                 'nombres' => 'Carlos Alberto',
                 'apellido_paterno' => 'Rodríguez',
                 'apellido_materno' => 'Martínez',
@@ -45,8 +49,6 @@ class ClienteSeeder extends Seeder
             ],
         ];
 
-        foreach ($clientes as $cliente) {
-            Cliente::create($cliente);
-        }
+        DB::table('clientes')->insert($clientes);
     }
 }

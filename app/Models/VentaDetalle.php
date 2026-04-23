@@ -9,30 +9,29 @@ class VentaDetalle extends Model
 {
     use HasFactory;
 
-    protected $table = 'venta_detalles';
+    protected $table = 'venta_productos';
     
     protected $fillable = [
-        'venta_id',
-        'producto_id',
-        'cantidad',
+        'id_producto',
+        'id_venta',
         'precio',
-        'subtotal'
+        'cantidad',
     ];
 
     protected $casts = [
         'precio' => 'decimal:2',
-        'subtotal' => 'decimal:2'
+        'cantidad' => 'integer',
     ];
 
     // Relación con venta
     public function venta()
     {
-        return $this->belongsTo(Venta::class);
+        return $this->belongsTo(Venta::class, 'id_venta', 'id');
     }
 
     // Relación con producto
     public function producto()
     {
-        return $this->belongsTo(Producto::class);
+        return $this->belongsTo(Producto::class, 'id_producto', 'id');
     }
 }

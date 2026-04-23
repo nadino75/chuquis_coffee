@@ -27,7 +27,7 @@ class ProveedorSeeder extends Seeder
             [
                 'nombre' => 'Productos Naturales Chuquisaca',
                 'direccion' => 'Av. Venezuela #789, Sucre',
-                'telefono' => null,
+                'telefono' => '4643000',
                 'celular' => '77003000',
                 'correo' => 'info@productosnaturales.com',
             ],

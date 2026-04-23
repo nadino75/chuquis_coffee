@@ -41,7 +41,13 @@ class ProveedoresProducto extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $fillable = ['proveedore_id', 'producto_id', 'cantidad', 'precio', 'fecha_compra', 'fecha_vencimiento', 'marca_id'];
+    protected $fillable = ['proveedore_id', 'producto_id', 'cantidad', 'fecha_compra', 'fecha_vencimiento', 'marca_id'];
+
+    protected $casts = [
+        'cantidad' => 'decimal:2',
+        'fecha_compra' => 'date',
+        'fecha_vencimiento' => 'date',
+    ];
 
 
     /**

@@ -163,7 +163,7 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    @if($ventasRecientes->count() > 0)
+                    @if(collect($ventasRecientes)->count() > 0)
                     <div class="table-responsive">
                         <table class="table table-sm table-hover">
                             <thead>
@@ -178,8 +178,8 @@
                                 @foreach($ventasRecientes as $venta)
                                 <tr>
                                     <td>{{ $venta->producto->nombre ?? 'N/A' }}</td>
-                                    <td>{{ $venta->cliente->nombre ?? 'N/A' }}</td>
-                                    <td>${{ number_format($venta->total, 2) }}</td>
+                                    <td>{{ $venta->cliente->nombres ?? 'N/A' }}</td>
+                                    <td>${{ number_format($venta->suma_total ?? 0, 2) }}</td>
                                     <td>{{ $venta->created_at->format('d/m H:i') }}</td>
                                 </tr>
                                 @endforeach
