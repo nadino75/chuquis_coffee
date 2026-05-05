@@ -1,80 +1,66 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ProveedoreController;
-use App\Http\Controllers\CategoriaController;
-use App\Http\Controllers\ClienteController;
-use App\Http\Controllers\TipoController;
-use App\Http\Controllers\ProductoController;
-use App\Http\Controllers\VentaController;
-use App\Http\Controllers\MarcaController;
-use App\Http\Controllers\ProveedoresProductoController;
-use App\Http\Controllers\PagoController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\ReporteController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\RoleController;
 use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| SPA Web Routes - All routes go through Vue Router
 |--------------------------------------------------------------------------
 */
 
-// Raíz muestra la página de welcome (pública)
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+// SPA entry point - single blade view for all routes
+Route::get('/{any}', function () {
+    return view('app');
+})->where('any', '^(?!api|storage|favicon\.ico).*$');
 
-// Ruta para el formulario de contacto (pública)
+// Auth routes (Breeze - form submissions, not SPA)
+Route::middleware('guest')->group(function () {
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login');
+    Route::post('register', [RegisteredUserController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('register');
+    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
+        ->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+    Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+        ->middleware('throttle:6,1')->name('verification.send');
+});
+
+// Profile routes
+Route::middleware('auth')->group(function () {
+    Route::get('/api/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/api/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/api/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Contact form (no ContactController — handled inline)
 Route::post('/contact', function () {
-    // Aquí puedes procesar el formulario de contacto
     return back()->with('success', 'Mensaje enviado correctamente');
 })->name('contact.submit');
 
-// Dashboard protegido - ACTUALIZADO para usar el DashboardController
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
-
-// API para datos del dashboard
-Route::get('/dashboard/datos', [DashboardController::class, 'obtenerDatosDashboard'])->middleware(['auth'])->name('dashboard.datos');
-
-// Perfil del usuario (solo autenticado)
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+// User API endpoint (includes roles with permissions for frontend role-based UI)
+Route::middleware('auth')->get('/api/user', function () {
+    return response()->json(Auth::user()->load('roles:id,name,permissions:id,name'));
 });
 
-// Rutas de autenticación (Breeze)
-require __DIR__ . '/auth.php';
+// Dashboard API
+Route::middleware('auth')->get('/api/dashboard/datos', [DashboardController::class, 'obtenerDatosDashboard'])->name('dashboard.datos');
 
-// Rutas protegidas por login para CRUDs
-Route::middleware(['auth'])->group(function () {
-    Route::resource('proveedores', ProveedoreController::class);
-    Route::resource('categorias', CategoriaController::class);
-    Route::resource('tipos', TipoController::class);
-    Route::resource('productos', ProductoController::class);
-    Route::resource('ventas', VentaController::class);
-    Route::resource('clientes', ClienteController::class);
-    Route::resource('marcas', MarcaController::class);
-    Route::resource('proveedores_productos', ProveedoresProductoController::class);
-    Route::resource('pagos', PagoController::class);
-    Route::resource('roles', RoleController::class);
-    Route::resource('users', UserController::class);
-    
-    // Rutas para Reportes
-    Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
-    Route::get('/reportes/datos', [ReporteController::class, 'obtenerDatosReporte'])->name('reportes.datos');
-    Route::get('/reportes/descargar-pdf', [ReporteController::class, 'descargarPDF'])->name('reportes.descargar-pdf');
-    Route::get('/reportes/debug', [ReporteController::class, 'debug'])->name('reportes.debug');
-    
-    // Ruta para reportes guardados
-    Route::get('/reportes/guardados', [ReporteController::class, 'reportesGuardados'])->name('reportes.guardados');
-    
-    // Rutas adicionales para ventas
-    Route::get('ventas/cliente/{clienteCi}', [VentaController::class, 'ventasPorCliente'])->name('ventas.por-cliente');
-    Route::get('ventas/producto/{productoId}', [VentaController::class, 'ventasPorProducto'])->name('ventas.por-producto');
-});
-
+// API routes for all CRUD resources
+require __DIR__ . '/api.php';
