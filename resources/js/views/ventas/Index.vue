@@ -379,8 +379,8 @@ function capitalize(str) {
 }
 
 function pagoBadgeClass(tipo) {
-    const map = { efectivo: 'bg-success', tarjeta: 'bg-info', transferencia: 'bg-warning', qr: 'bg-primary', mixto: 'bg-dark' };
-    return map[tipo] || 'bg-secondary';
+    const map = { efectivo: 'badge-success', tarjeta: 'badge-info', transferencia: 'badge-warning', qr: 'badge-primary', mixto: 'badge-mixto' };
+    return map[tipo] || 'badge-secondary';
 }
 
 function formatDate(d) {
@@ -562,4 +562,9 @@ onMounted(() => {
 .btn-group .btn { margin: 0 2px; }
 .invalid-feedback { display: block; }
 .text-gold { color: #daa520; }
+.badge-mixto {
+    background: linear-gradient(135deg, #daa520, #b8860b);
+    color: #1a1a1a;
+    font-weight: 600;
+}
 </style>
