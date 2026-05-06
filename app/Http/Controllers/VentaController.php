@@ -339,6 +339,7 @@ class VentaController extends Controller
                 'cantidad' => 'required|integer|min:1',
                 'precio' => 'required|numeric|min:0',
                 'tipo_pago' => 'required|in:efectivo,tarjeta,transferencia,qr,mixto',
+                'monto_recibido' => 'required_if:tipo_pago,efectivo|numeric|min:0',
                 'pagos_mixtos' => 'required_if:tipo_pago,mixto|array|min:1',
                 'pagos_mixtos.*.tipo_pago' => 'required_with:pagos_mixtos|in:efectivo,tarjeta,transferencia,qr',
                 'pagos_mixtos.*.monto' => 'required_with:pagos_mixtos|numeric|min:0.01',
@@ -360,14 +361,29 @@ class VentaController extends Controller
                 }
             }
 
+            if ($validated['tipo_pago'] === 'efectivo') {
+                if ($validated['monto_recibido'] < $total) {
+                    return response()->json([
+                        'message' => 'El monto recibido no puede ser menor al total de la venta.'
+                    ], 422);
+                }
+            }
+
             // Crear pago principal
-            $pago = Pago::create([
+            $pagoData = [
                 'recibo' => 'RC-' . date('His') . rand(100, 999),
                 'fecha' => now(),
                 'tipo_pago' => $validated['tipo_pago'],
                 'total_pagado' => $total,
                 'cliente_ci' => $validated['cliente_ci'],
-            ]);
+            ];
+
+            if ($validated['tipo_pago'] === 'efectivo') {
+                $pagoData['monto_recibido'] = $validated['monto_recibido'];
+                $pagoData['cambio'] = $validated['monto_recibido'] - $total;
+            }
+
+            $pago = Pago::create($pagoData);
 
             // Si es mixto, crear sub-pagos
             if ($validated['tipo_pago'] === 'mixto') {

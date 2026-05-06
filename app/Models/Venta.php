@@ -4,30 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Spatie\Permission\Traits\HasRoles;
 use App\Models\Cliente;
 use App\Models\Pago;
 
-/**
- * Class Venta
- *
- * @property $id
- * @property $fecha_venta
- * @property $suma_total
- * @property $cliente_id
- * @property $pago_id
- * @property $detalles
- * @property $created_at
- * @property $updated_at
- *
- * @property Cliente $cliente
- * @property Pago $pago
- * @package App
- * @mixin \Illuminate\Database\Eloquent\Builder
- */
 class Venta extends Model
 {
-    use HasFactory, HasRoles;
+    use HasFactory;
     
     protected $perPage = 20;
 

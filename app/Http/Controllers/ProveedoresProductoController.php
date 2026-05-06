@@ -8,6 +8,7 @@ use App\Models\Producto;
 use App\Models\Marca;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use App\Http\Requests\ProveedoresProductoRequest;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
@@ -89,5 +90,50 @@ class ProveedoresProductoController extends Controller
 
         return Redirect::route('proveedores_productos.index')
             ->with('success', 'Registro eliminado exitosamente.');
+    }
+
+    // API Methods
+    public function indexApi(Request $request): JsonResponse
+    {
+        $proveedoresProductos = ProveedoresProducto::with(['proveedore', 'producto', 'marca'])->paginate(10);
+        return response()->json($proveedoresProductos);
+    }
+
+    public function showApi($id): JsonResponse
+    {
+        $proveedoresProducto = ProveedoresProducto::with(['proveedore', 'producto', 'marca'])->findOrFail($id);
+        return response()->json($proveedoresProducto);
+    }
+
+    public function storeApi(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'proveedore_id' => 'required|exists:proveedores,id',
+            'producto_id' => 'required|exists:productos,id',
+            'marca_id' => 'nullable|exists:marcas,id',
+            'precio' => 'nullable|numeric|min:0',
+        ]);
+        $proveedoresProducto = ProveedoresProducto::create($validated);
+        return response()->json($proveedoresProducto, 201);
+    }
+
+    public function updateApi(Request $request, $id): JsonResponse
+    {
+        $proveedoresProducto = ProveedoresProducto::findOrFail($id);
+        $validated = $request->validate([
+            'proveedore_id' => 'required|exists:proveedores,id',
+            'producto_id' => 'required|exists:productos,id',
+            'marca_id' => 'nullable|exists:marcas,id',
+            'precio' => 'nullable|numeric|min:0',
+        ]);
+        $proveedoresProducto->update($validated);
+        return response()->json($proveedoresProducto);
+    }
+
+    public function destroyApi($id): JsonResponse
+    {
+        $proveedoresProducto = ProveedoresProducto::findOrFail($id);
+        $proveedoresProducto->delete();
+        return response()->json(['message' => 'Registro eliminado exitosamente']);
     }
 }

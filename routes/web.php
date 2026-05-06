@@ -56,7 +56,7 @@ Route::post('/contact', function () {
 
 // User API endpoint (includes roles with permissions for frontend role-based UI)
 Route::middleware('auth')->get('/api/user', function () {
-    return response()->json(Auth::user()->load('roles:id,name,permissions:id,name'));
+    return response()->json(Auth::user()->load(['roles:id,name', 'roles.permissions:id,name']));
 });
 
 // Dashboard API

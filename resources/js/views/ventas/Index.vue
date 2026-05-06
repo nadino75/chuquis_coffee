@@ -172,7 +172,31 @@
 
                             <!-- Single payment -->
                             <div v-if="createForm.tipo_pago && createForm.tipo_pago !== 'mixto'">
-                                <div class="form-group">
+                                <!-- Cash payment with change calculation -->
+                                <div v-if="createForm.tipo_pago === 'efectivo'" class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Monto a Pagar <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" :value="ventaTotal" readonly style="background-color: #2c2c2c; color: #daa520; font-weight: bold;">
+                                            <small class="form-text text-muted">Total de la venta</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Monto Recibido <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.monto_recibido }" v-model.number="createForm.monto_recibido" required step="0.01" :min="ventaTotal">
+                                            <small class="form-text text-muted" v-if="ventaTotal > 0">Ingrese el monto que entrega el cliente</small>
+                                            <div class="invalid-feedback" v-if="formErrors.monto_recibido">{{ formErrors.monto_recibido[0] }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="createForm.tipo_pago === 'efectivo'" class="form-group">
+                                    <label>Cambio</label>
+                                    <input type="text" class="form-control" :value="cambio" readonly style="background-color: #1c3a1c; color: #4caf50; font-weight: bold;">
+                                </div>
+
+                                <!-- Other payment types -->
+                                <div v-else class="form-group">
                                     <label>Monto Pagado <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.monto_pago }" v-model.number="createForm.monto_pago" required step="0.01" min="0">
                                     <small class="form-text text-muted" v-if="ventaTotal > 0">Total de la venta: ${{ ventaTotal }}</small>
@@ -286,6 +310,8 @@
                             <tr><th>Tipo de Pago</th><td><span class="badge" :class="pagoBadgeClass(currentItem.pago?.tipo_pago)">{{ capitalize(currentItem.pago?.tipo_pago) || '-' }}</span></td></tr>
                             <tr><th>Cliente</th><td>{{ currentItem.cliente?.nombres || '-' }}</td></tr>
                             <tr><th>Total</th><td class="text-gold font-weight-bold">${{ currentItem.suma_total || currentItem.total || 0 }}</td></tr>
+                            <tr v-if="currentItem.pago?.tipo_pago === 'efectivo'"><th>Monto Recibido</th><td class="font-weight-bold">${{ Number(currentItem.pago.monto_recibido || 0).toFixed(2) }}</td></tr>
+                            <tr v-if="currentItem.pago?.tipo_pago === 'efectivo'"><th>Cambio</th><td class="font-weight-bold" style="color: #4caf50;">${{ Number(currentItem.pago.cambio || 0).toFixed(2) }}</td></tr>
                             <tr><th>Fecha</th><td>{{ formatDate(currentItem.created_at) }}</td></tr>
                         </table>
 
@@ -348,6 +374,7 @@ const createForm = reactive({
     precio: 0,
     tipo_pago: '',
     monto_pago: 0,
+    monto_recibido: 0,
     pagos_mixtos: [{ tipo_pago: '', monto: 0 }],
 });
 const editForm = reactive({ suma_total: '' });
@@ -363,6 +390,12 @@ const pagadoSum = computed(() => {
 
 const remainingBalance = computed(() => {
     return ventaTotal.value - pagadoSum.value;
+});
+
+const cambio = computed(() => {
+    const recib = Number(createForm.monto_recibido) || 0;
+    const change = recib - ventaTotal.value;
+    return change >= 0 ? `$${change.toFixed(2)}` : '$0.00';
 });
 
 const visiblePages = computed(() => {
@@ -460,6 +493,7 @@ function openCreateModal() {
     createForm.precio = 0;
     createForm.tipo_pago = '';
     createForm.monto_pago = 0;
+    createForm.monto_recibido = 0;
     createForm.pagos_mixtos = [{ tipo_pago: '', monto: 0 }];
     Object.keys(formErrors).forEach(k => delete formErrors[k]);
     showCreate.value = true;
@@ -485,6 +519,8 @@ async function createItem() {
             payload.pagos_mixtos = createForm.pagos_mixtos
                 .filter(p => p.tipo_pago && p.monto > 0)
                 .map(p => ({ tipo_pago: p.tipo_pago, monto: Number(p.monto) }));
+        } else if (createForm.tipo_pago === 'efectivo') {
+            payload.monto_recibido = createForm.monto_recibido;
         } else {
             payload.monto_pago = createForm.monto_pago;
         }

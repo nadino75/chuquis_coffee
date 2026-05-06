@@ -6,6 +6,7 @@ use App\Models\Cliente;
 use App\Models\Venta;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Redirect;
 
@@ -13,8 +14,6 @@ use App\Http\Controllers\Controller;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use DB;
-/* use Hash;
-use Illuminate\Support\Arr; */
 
 
 
@@ -50,7 +49,11 @@ class ClienteController extends Controller
         ]);
 
         try {
-            Cliente::create($request->all());
+            Cliente::create($request->only([
+                'ci', 'ci_complemento', 'nit', 'nombres',
+                'apellido_paterno', 'apellido_materno', 'sexo',
+                'telefono', 'celular', 'correo',
+            ]));
             return redirect()->route('clientes.index')
                 ->with('success', 'Cliente creado correctamente.');
                 
@@ -63,11 +66,12 @@ class ClienteController extends Controller
 
     public function show($id): View
     {
-        $cliente = Cliente::find($id);
-        $clientePermissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
-            ->where("role_has_permissions.role_id",$id)
+        $cliente = Cliente::findOrFail($id);
+        $userRoleId = auth()->user()->roles->first()->id ?? 0;
+        $clientePermissions = Permission::join("role_has_permissions", "role_has_permissions.permission_id", "=", "permissions.id")
+            ->where("role_has_permissions.role_id", $userRoleId)
             ->get();
-        return view('cliente.show', compact('cliente','clientePermissions'));
+        return view('cliente.show', compact('cliente', 'clientePermissions'));
     }
 
     public function update(Request $request, $id): RedirectResponse
@@ -88,7 +92,11 @@ class ClienteController extends Controller
         ]);
 
         try {
-            $cliente->update($request->all());
+            $cliente->update($request->only([
+                'ci', 'ci_complemento', 'nit', 'nombres',
+                'apellido_paterno', 'apellido_materno', 'sexo',
+                'telefono', 'celular', 'correo',
+            ]));
             return redirect()->route('clientes.index')
                 ->with('success', 'Cliente actualizado correctamente.');
                 
@@ -111,5 +119,62 @@ class ClienteController extends Controller
             return redirect()->route('clientes.index')
                 ->with('error', 'Error al eliminar cliente: ' . $e->getMessage());
         }
+    }
+
+    // API Methods
+    public function indexApi(Request $request): JsonResponse
+    {
+        $clientes = Cliente::orderBy('created_at', 'desc')->paginate(10);
+        return response()->json($clientes);
+    }
+
+    public function showApi($ci): JsonResponse
+    {
+        $cliente = Cliente::where('ci', $ci)->firstOrFail();
+        return response()->json($cliente);
+    }
+
+    public function storeApi(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ci' => 'required|unique:clientes,ci|max:12',
+            'ci_complemento' => 'nullable|max:3',
+            'nit' => 'nullable|max:20',
+            'nombres' => 'required|max:100',
+            'apellido_paterno' => 'nullable|max:100',
+            'apellido_materno' => 'nullable|max:100',
+            'sexo' => 'nullable|in:masculino,femenino',
+            'telefono' => 'nullable|max:20',
+            'celular' => 'nullable|max:20',
+            'correo' => 'required|email|max:100',
+        ]);
+        $cliente = Cliente::create($validated);
+        return response()->json($cliente, 201);
+    }
+
+    public function updateApi(Request $request, $ci): JsonResponse
+    {
+        $cliente = Cliente::where('ci', $ci)->firstOrFail();
+        $validated = $request->validate([
+            'ci' => 'required|max:12|unique:clientes,ci,' . $cliente->ci . ',ci',
+            'ci_complemento' => 'nullable|max:3',
+            'nit' => 'nullable|max:20',
+            'nombres' => 'required|max:100',
+            'apellido_paterno' => 'nullable|max:100',
+            'apellido_materno' => 'nullable|max:100',
+            'sexo' => 'nullable|in:masculino,femenino',
+            'telefono' => 'nullable|max:20',
+            'celular' => 'nullable|max:20',
+            'correo' => 'required|email|max:100',
+        ]);
+        $cliente->update($validated);
+        return response()->json($cliente);
+    }
+
+    public function destroyApi($ci): JsonResponse
+    {
+        $cliente = Cliente::where('ci', $ci)->firstOrFail();
+        $cliente->delete();
+        return response()->json(['message' => 'Cliente eliminado correctamente']);
     }
 }

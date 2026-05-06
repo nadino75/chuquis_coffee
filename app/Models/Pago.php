@@ -16,6 +16,8 @@ class Pago extends Model
         'fecha',
         'tipo_pago',
         'total_pagado',
+        'monto_recibido',
+        'cambio',
         'cliente_ci',
         'pago_mixto_id',
     ];
@@ -23,6 +25,8 @@ class Pago extends Model
     protected $casts = [
         'fecha' => 'date',
         'total_pagado' => 'decimal:2',
+        'monto_recibido' => 'decimal:2',
+        'cambio' => 'decimal:2',
     ];
 
     public function cliente()

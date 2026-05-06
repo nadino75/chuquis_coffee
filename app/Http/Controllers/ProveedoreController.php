@@ -5,15 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Proveedore;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use App\Http\Requests\ProveedoreRequest;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
 class ProveedoreController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request): View
     {
         $proveedores = Proveedore::paginate();
@@ -22,9 +20,6 @@ class ProveedoreController extends Controller
             ->with('i', ($request->input('page', 1) - 1) * $proveedores->perPage());
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create(): View
     {
         $proveedore = new Proveedore();
@@ -32,53 +27,90 @@ class ProveedoreController extends Controller
         return view('proveedore.create', compact('proveedore'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(ProveedoreRequest $request): RedirectResponse
     {
         Proveedore::create($request->validated());
 
         return Redirect::route('proveedores.index')
-            ->with('success', 'Proveedore created successfully.');
+            ->with('success', 'Proveedor creado correctamente.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id): View
+    public function show(int $id): View
     {
-        $proveedore = Proveedore::find($id);
+        $proveedore = Proveedore::findOrFail($id);
 
         return view('proveedore.show', compact('proveedore'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id): View
+    public function edit(int $id): View
     {
-        $proveedore = Proveedore::find($id);
+        $proveedore = Proveedore::findOrFail($id);
 
         return view('proveedore.edit', compact('proveedore'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(ProveedoreRequest $request, Proveedore $proveedore): RedirectResponse
     {
         $proveedore->update($request->validated());
 
         return Redirect::route('proveedores.index')
-            ->with('success', 'Proveedore updated successfully');
+            ->with('success', 'Proveedor actualizado correctamente.');
     }
 
-    public function destroy($id): RedirectResponse
+    public function destroy(int $id): RedirectResponse
     {
-        Proveedore::find($id)->delete();
+        Proveedore::findOrFail($id)->delete();
 
         return Redirect::route('proveedores.index')
-            ->with('success', 'Proveedore deleted successfully');
+            ->with('success', 'Proveedor eliminado correctamente.');
+    }
+
+    // API Methods
+    public function indexApi(): JsonResponse
+    {
+        $proveedores = Proveedore::paginate(10);
+        return response()->json($proveedores);
+    }
+
+    public function showApi(int $id): JsonResponse
+    {
+        $proveedore = Proveedore::findOrFail($id);
+        return response()->json($proveedore);
+    }
+
+    public function storeApi(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'nombre' => 'required|max:100',
+            'contacto' => 'nullable|max:100',
+            'telefono' => 'nullable|max:20',
+            'email' => 'nullable|email|max:100',
+            'direccion' => 'nullable|string',
+            'ruc' => 'nullable|max:20',
+        ]);
+        $proveedore = Proveedore::create($validated);
+        return response()->json($proveedore, 201);
+    }
+
+    public function updateApi(Request $request, int $id): JsonResponse
+    {
+        $proveedore = Proveedore::findOrFail($id);
+        $validated = $request->validate([
+            'nombre' => 'required|max:100',
+            'contacto' => 'nullable|max:100',
+            'telefono' => 'nullable|max:20',
+            'email' => 'nullable|email|max:100',
+            'direccion' => 'nullable|string',
+            'ruc' => 'nullable|max:20',
+        ]);
+        $proveedore->update($validated);
+        return response()->json($proveedore);
+    }
+
+    public function destroyApi(int $id): JsonResponse
+    {
+        $proveedore = Proveedore::findOrFail($id);
+        $proveedore->delete();
+        return response()->json(['message' => 'Proveedor eliminado correctamente.']);
     }
 }

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:/Users/Usuario/.claude/skills/superpowers\")",
+      "Read(//c/Users/Usuario/.claude/skills/superpowers/**)",
+      "Bash(php artisan *)"
+    ]
+  }
+}

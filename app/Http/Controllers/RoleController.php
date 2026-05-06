@@ -12,6 +12,7 @@ use DB;
 use Illuminate\Support\Arr; */
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 
 class RoleController extends Controller
 {
@@ -120,6 +121,46 @@ class RoleController extends Controller
         DB::table("roles")->where('id',$id)->delete();
         return redirect()->route('roles.index')
             ->with('success', 'Rol eliminado correctamente');
+    }
+
+    // API Methods
+    public function indexApi(Request $request): JsonResponse
+    {
+        $roles = Role::with('permissions')->orderBy('id','DESC')->paginate(10);
+        return response()->json($roles);
+    }
+
+    public function showApi($id): JsonResponse
+    {
+        $role = Role::with('permissions')->findOrFail($id);
+        return response()->json($role);
+    }
+
+    public function storeApi(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|unique:roles,name',
+            'guard_name' => 'nullable|string',
+        ]);
+        $role = Role::create(['name' => $validated['name'], 'guard_name' => $validated['guard_name'] ?? 'web']);
+        return response()->json($role, 201);
+    }
+
+    public function updateApi(Request $request, $id): JsonResponse
+    {
+        $role = Role::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|unique:roles,name,' . $id,
+            'guard_name' => 'nullable|string',
+        ]);
+        $role->update(['name' => $validated['name'], 'guard_name' => $validated['guard_name'] ?? 'web']);
+        return response()->json($role);
+    }
+
+    public function destroyApi($id): JsonResponse
+    {
+        DB::table("roles")->where('id', $id)->delete();
+        return response()->json(['message' => 'Rol eliminado correctamente']);
     }
 
 } 

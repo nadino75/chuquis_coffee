@@ -12,6 +12,7 @@ use Hash;
 use Illuminate\Support\Arr; 
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
@@ -95,7 +96,7 @@ class UserController extends Controller
         DB::table('model_has_roles')->where('model_id', $id)->delete();
         $user->assignRole($request->input('roles'));
         return redirect()->route('users.index')
-            ->with('succes', 'Usuario actualizado correctamente');
+            ->with('success', 'Usuario actualizado correctamente');
     }
 
     /** 
@@ -103,9 +104,75 @@ class UserController extends Controller
     * @return Illuminate\Http\Response
     */
 
-    public function destroy ($id) : RedirectResponse{
-        User::find($id)->delete();
+    public function destroy($id): RedirectResponse
+    {
+        if ((int) $id === auth()->id()) {
+            return redirect()->route('users.index')
+                ->with('error', 'No puedes eliminar tu propio usuario.');
+        }
+        User::findOrFail($id)->delete();
         return redirect()->route('users.index')
             ->with('success', 'Usuario eliminado correctamente');
+    }
+
+    // API Methods
+    public function indexApi(Request $request): JsonResponse
+    {
+        $users = User::with('roles')->latest()->paginate(10);
+        return response()->json($users);
+    }
+
+    public function showApi($id): JsonResponse
+    {
+        $user = User::with('roles')->findOrFail($id);
+        return response()->json($user);
+    }
+
+    public function storeApi(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'role' => 'nullable|string',
+        ]);
+        $validated['password'] = Hash::make($validated['password']);
+        $user = User::create($validated);
+        if (!empty($validated['role'])) {
+            $user->assignRole($validated['role']);
+        }
+        return response()->json($user, 201);
+    }
+
+    public function updateApi(Request $request, $id): JsonResponse
+    {
+        $user = User::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users,email,' . $id,
+            'password' => 'nullable|min:6',
+            'role' => 'nullable|string',
+        ]);
+        if (!empty($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
+        $user->update($validated);
+        if (!empty($validated['role'])) {
+            DB::table('model_has_roles')->where('model_id', $id)->delete();
+            $user->assignRole($validated['role']);
+        }
+        return response()->json($user->load('roles'));
+    }
+
+    public function destroyApi($id): JsonResponse
+    {
+        if ((int) $id === auth()->id()) {
+            return response()->json(['message' => 'No puedes eliminar tu propio usuario.'], 403);
+        }
+        $user = User::findOrFail($id);
+        $user->delete();
+        return response()->json(['message' => 'Usuario eliminado correctamente']);
     }
 }

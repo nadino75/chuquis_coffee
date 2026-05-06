@@ -1,0 +1,1 @@
+jwt-auth secret [yu6WhAyyBz3UlXzIqFce3zlYvfATNkzPhG7IJlIxHE1ylaforPTIvOhoMwtGF9XI] set successfully.

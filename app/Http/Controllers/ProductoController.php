@@ -6,30 +6,27 @@ use App\Models\Producto;
 use App\Models\Categoria;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use App\Http\Requests\ProductoRequest;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
+use Spatie\Permission\Models\Permission;
 
 class ProductoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     function __construct()
     {
         $this->middleware('permission:ver-producto|crear-producto|editar-producto|borrar-producto', ['only' => ['index']]);
-        $this->middleware('permission:crear-producto', ['only' => ['create','store']]);
-        $this->middleware('permission:editar-producto', ['only' => ['edit','update']]);
+        $this->middleware('permission:crear-producto', ['only' => ['create', 'store']]);
+        $this->middleware('permission:editar-producto', ['only' => ['edit', 'update']]);
         $this->middleware('permission:borrar-producto', ['only' => ['destroy']]);
     }
 
     public function index(Request $request): View
     {
-        // Traer productos con su categoria
         $productos = Producto::with('categoria')->paginate(10);
         $categorias = Categoria::all();
 
@@ -37,9 +34,6 @@ class ProductoController extends Controller
             ->with('i', ($request->input('page', 1) - 1) * $productos->perPage());
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create(): View
     {
         $producto = new Producto();
@@ -49,38 +43,22 @@ class ProductoController extends Controller
         return view('producto.create', compact('producto', 'categorias', 'permission'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(ProductoRequest $request): RedirectResponse
     {
         try {
             $data = $request->validated();
 
-            // Procesar imagen si se subió
             if ($request->hasFile('imagen')) {
                 $image = $request->file('imagen');
                 $imageName = time() . '_' . $image->getClientOriginalName();
-                
-                // Guardar imagen en storage
                 $imagePath = $image->storeAs('productos', $imageName, 'public');
                 $data['imagen'] = $imagePath;
-
-                // Opcional: Crear thumbnail
-                $thumbnail = Image::make($image->getRealPath());
-                $thumbnail->resize(300, 300, function ($constraint) {
-                    $constraint->aspectRatio();
-                });
-                $thumbnailPath = 'productos/thumb_' . $imageName;
-                Storage::disk('public')->put($thumbnailPath, $thumbnail->stream());
             }
 
-            // Establecer stock_minimo por defecto si no se proporciona
             if (!isset($data['stock_minimo']) || empty($data['stock_minimo'])) {
                 $data['stock_minimo'] = 5;
             }
 
-            // Crear producto
             Producto::create($data);
 
             return Redirect::route('productos.index')
@@ -93,78 +71,48 @@ class ProductoController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id): View
+    public function show(int $id): View
     {
         $producto = Producto::with('categoria')->findOrFail($id);
-        
-        // Obtener permisos del usuario actual, no del producto
+        $userRoleId = Auth::user()?->roles->first()?->id ?? 0;
         $productoPermissions = Permission::join("role_has_permissions", "role_has_permissions.permission_id", "=", "permissions.id")
-            ->where("role_has_permissions.role_id", auth()->user()->roles->first()->id ?? 0)
+            ->where("role_has_permissions.role_id", $userRoleId)
             ->get();
 
         return view('producto.show', compact('producto', 'productoPermissions'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id): View
+    public function edit(int $id): View
     {
         $producto = Producto::findOrFail($id);
         $categorias = Categoria::all();
         $permission = Permission::get();
-        
-        // Obtener permisos del usuario actual
+        $userRoleId = Auth::user()?->roles->first()?->id ?? 0;
         $productoPermissions = DB::table("role_has_permissions")
-            ->where("role_has_permissions.role_id", auth()->user()->roles->first()->id ?? 0)
-            ->pluck('role_has_permissions.permission_id')
+            ->where("role_has_permissions.role_id", $userRoleId)
+            ->pluck('role_has_permissions.permission_id', 'role_has_permissions.permission_id')
             ->all();
 
         return view('producto.edit', compact('producto', 'categorias', 'permission', 'productoPermissions'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(ProductoRequest $request, $id): RedirectResponse
+    public function update(ProductoRequest $request, int $id): RedirectResponse
     {
         try {
             $producto = Producto::findOrFail($id);
             $data = $request->validated();
 
-            // Procesar imagen si se subió una nueva
             if ($request->hasFile('imagen')) {
-                // Eliminar imagen anterior si existe
                 if ($producto->imagen && Storage::disk('public')->exists($producto->imagen)) {
                     Storage::disk('public')->delete($producto->imagen);
-                    
-                    // Eliminar thumbnail si existe
-                    $thumbnailPath = 'productos/thumb_' . basename($producto->imagen);
-                    if (Storage::disk('public')->exists($thumbnailPath)) {
-                        Storage::disk('public')->delete($thumbnailPath);
-                    }
                 }
 
                 $image = $request->file('imagen');
                 $imageName = time() . '_' . $image->getClientOriginalName();
-                
-                // Guardar nueva imagen
                 $imagePath = $image->storeAs('productos', $imageName, 'public');
                 $data['imagen'] = $imagePath;
-
-                // Crear thumbnail
-                $thumbnail = Image::make($image->getRealPath());
-                $thumbnail->resize(300, 300, function ($constraint) {
-                    $constraint->aspectRatio();
-                });
-                $thumbnailPath = 'productos/thumb_' . $imageName;
-                Storage::disk('public')->put($thumbnailPath, $thumbnail->stream());
             }
 
-            // Actualizar producto
             $producto->update($data);
 
             return Redirect::route('productos.index')
@@ -177,29 +125,18 @@ class ProductoController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id): RedirectResponse
+    public function destroy(int $id): RedirectResponse
     {
         try {
             $producto = Producto::findOrFail($id);
 
-            // Verificar si el producto tiene ventas asociadas
             if ($producto->ventas()->count() > 0) {
                 return Redirect::route('productos.index')
                     ->with('error', 'No se puede eliminar el producto porque tiene ventas asociadas.');
             }
 
-            // Eliminar imagen si existe
             if ($producto->imagen && Storage::disk('public')->exists($producto->imagen)) {
                 Storage::disk('public')->delete($producto->imagen);
-                
-                // Eliminar thumbnail si existe
-                $thumbnailPath = 'productos/thumb_' . basename($producto->imagen);
-                if (Storage::disk('public')->exists($thumbnailPath)) {
-                    Storage::disk('public')->delete($thumbnailPath);
-                }
             }
 
             $producto->delete();
@@ -213,14 +150,11 @@ class ProductoController extends Controller
         }
     }
 
-    /**
-     * Método adicional para actualizar stock
-     */
-    public function actualizarStock(Request $request, $id): RedirectResponse
+    public function actualizarStock(Request $request, int $id): RedirectResponse
     {
         $request->validate([
             'stock' => 'required|integer|min:0',
-            'tipo' => 'required|in:entrada,salida,ajuste'
+            'tipo' => 'required|in:entrada,salida,ajuste',
         ]);
 
         try {
@@ -242,11 +176,73 @@ class ProductoController extends Controller
             }
 
             return Redirect::back()
-                ->with('success', "Stock actualizado correctamente. Anterior: {$stockAnterior}, Actual: {$producto->stock}");
+                ->with('success', "Stock actualizado. Anterior: {$stockAnterior}, Actual: {$producto->stock}");
 
         } catch (\Exception $e) {
             return Redirect::back()
                 ->with('error', 'Error al actualizar stock: ' . $e->getMessage());
         }
+    }
+
+    // API Methods
+    public function indexApi(): JsonResponse
+    {
+        $productos = Producto::with(['categoria', 'marca'])->paginate(10);
+        return response()->json($productos);
+    }
+
+    public function showApi(int $id): JsonResponse
+    {
+        $producto = Producto::with(['categoria', 'marca'])->findOrFail($id);
+        return response()->json($producto);
+    }
+
+    public function storeApi(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'nombre' => 'required|max:100',
+            'descripcion' => 'nullable|string',
+            'precio' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'stock_minimo' => 'nullable|integer|min:0',
+            'categoria_id' => 'nullable|exists:categorias,id',
+            'marca_id' => 'nullable|exists:marcas,id',
+        ]);
+        $producto = Producto::create($validated);
+        return response()->json($producto, 201);
+    }
+
+    public function updateApi(Request $request, int $id): JsonResponse
+    {
+        $producto = Producto::findOrFail($id);
+        $validated = $request->validate([
+            'nombre' => 'required|max:100',
+            'descripcion' => 'nullable|string',
+            'precio' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'stock_minimo' => 'nullable|integer|min:0',
+            'categoria_id' => 'nullable|exists:categorias,id',
+            'marca_id' => 'nullable|exists:marcas,id',
+        ]);
+        $producto->update($validated);
+        return response()->json($producto);
+    }
+
+    public function destroyApi(int $id): JsonResponse
+    {
+        $producto = Producto::findOrFail($id);
+
+        if ($producto->ventas()->count() > 0) {
+            return response()->json([
+                'message' => 'No se puede eliminar el producto porque tiene ventas asociadas.',
+            ], 422);
+        }
+
+        if ($producto->imagen && Storage::disk('public')->exists($producto->imagen)) {
+            Storage::disk('public')->delete($producto->imagen);
+        }
+
+        $producto->delete();
+        return response()->json(['message' => 'Producto eliminado correctamente.']);
     }
 }
