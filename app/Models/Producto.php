@@ -4,13 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles;
 
-class Producto extends Authenticatable
+class Producto extends Model
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory;
 
     protected $fillable = [
         'nombre', 
@@ -19,6 +16,7 @@ class Producto extends Authenticatable
         'stock',
         'stock_minimo',
         'categoria_id',
+        'marca_id',
         'imagen'
     ];
 
@@ -45,6 +43,12 @@ class Producto extends Authenticatable
     public function categoria()
     {
         return $this->belongsTo(Categoria::class);
+    }
+
+    // Relación con marca
+    public function marca()
+    {
+        return $this->belongsTo(Marca::class);
     }
 
     public function ventaProductos()

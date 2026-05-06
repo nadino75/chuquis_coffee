@@ -75,13 +75,6 @@
                             </router-link>
                         </li>
 
-                        <li class="nav-item" v-if="can('ver-pago') && !isCajero && !isContador">
-                            <router-link to="/pagos-mixto" class="nav-link" active-class="active">
-                                <i class="nav-icon fas fa-exchange-alt"></i>
-                                <p>Pagos Mixtos</p>
-                            </router-link>
-                        </li>
-
                         <!-- ── CATÁLOGO (no Cajero, no Contador) ── -->
                         <template v-if="!isCajero && can('ver-producto')">
                             <li class="nav-header">Catálogo</li>

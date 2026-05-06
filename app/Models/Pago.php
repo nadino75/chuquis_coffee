@@ -5,14 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles;
 
 
-class Pago extends Authenticatable
+class Pago extends Model
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory;
 
     protected $fillable = [
         'recibo',
@@ -42,6 +39,8 @@ class Pago extends Authenticatable
     {
         return $this->hasMany(Pago::class, 'pago_mixto_id', 'id');
     }
+
+    protected $with = ['pagosHijos'];
 
     public function ventas()
     {

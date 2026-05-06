@@ -9,6 +9,7 @@ use App\Models\Pago;
 use App\Models\VentaDetalle;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
@@ -51,7 +52,7 @@ class VentaController extends Controller
     public function store(Request $request): RedirectResponse
     {
         try {
-            Log::info('Iniciando proceso de venta', ['request_data' => $request->all()]);
+            Log::info('Iniciando proceso de venta', ['cliente_ci' => $request->cliente_ci]);
             
             DB::transaction(function () use ($request) {
                 // Validación para múltiples productos
@@ -114,7 +115,7 @@ class VentaController extends Controller
                 $cliente = Cliente::where('ci', $request->cliente_ci)->firstOrFail();
 
                 // Crear pago principal con recibo más corto
-                $recibo = 'RC-' . date('His') . rand(100, 999);
+                $recibo = 'RC-' . date('His') . random_int(100, 999);
                 Log::info('Creando pago principal', ['recibo' => $recibo]);
                 
                 $pago = Pago::create([
@@ -304,5 +305,159 @@ class VentaController extends Controller
 
         $venta->setAttribute('cliente_ci', optional($venta->cliente)->ci);
         $venta->setAttribute('total', $venta->suma_total);
+    }
+
+    // API Methods
+    public function indexApi(Request $request): JsonResponse
+    {
+        $ventas = Venta::with(['cliente', 'pago', 'ventaProductos.producto'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        $ventas->getCollection()->transform(function ($venta) {
+            $this->hidratarCamposLegacyVenta($venta);
+            return $venta;
+        });
+
+        return response()->json($ventas);
+    }
+
+    public function showApi($id): JsonResponse
+    {
+        $venta = Venta::with(['cliente', 'pago', 'ventaProductos.producto'])->findOrFail($id);
+        $this->hidratarCamposLegacyVenta($venta);
+        return response()->json($venta);
+    }
+
+    public function storeApi(Request $request): JsonResponse
+    {
+        DB::beginTransaction();
+        try {
+            $validated = $request->validate([
+                'cliente_ci' => 'required|exists:clientes,ci',
+                'producto_id' => 'required|exists:productos,id',
+                'cantidad' => 'required|integer|min:1',
+                'precio' => 'required|numeric|min:0',
+                'tipo_pago' => 'required|in:efectivo,tarjeta,transferencia,qr,mixto',
+                'pagos_mixtos' => 'required_if:tipo_pago,mixto|array|min:1',
+                'pagos_mixtos.*.tipo_pago' => 'required_with:pagos_mixtos|in:efectivo,tarjeta,transferencia,qr',
+                'pagos_mixtos.*.monto' => 'required_with:pagos_mixtos|numeric|min:0.01',
+            ]);
+
+            $producto = Producto::findOrFail($validated['producto_id']);
+            if ($producto->stock < $validated['cantidad']) {
+                return response()->json(['message' => 'Stock insuficiente'], 422);
+            }
+
+            $total = $validated['precio'] * $validated['cantidad'];
+
+            if ($validated['tipo_pago'] === 'mixto') {
+                $totalPagado = array_sum(array_column($validated['pagos_mixtos'], 'monto'));
+                if (abs($totalPagado - $total) > 0.01) {
+                    return response()->json([
+                        'message' => 'El total de pagos mixtos no coincide con el total de la venta.'
+                    ], 422);
+                }
+            }
+
+            // Crear pago principal
+            $pago = Pago::create([
+                'recibo' => 'RC-' . date('His') . rand(100, 999),
+                'fecha' => now(),
+                'tipo_pago' => $validated['tipo_pago'],
+                'total_pagado' => $total,
+                'cliente_ci' => $validated['cliente_ci'],
+            ]);
+
+            // Si es mixto, crear sub-pagos
+            if ($validated['tipo_pago'] === 'mixto') {
+                foreach ($validated['pagos_mixtos'] as $subPago) {
+                    Pago::create([
+                        'recibo' => 'RC-MX-' . date('His') . rand(100, 999),
+                        'fecha' => now(),
+                        'tipo_pago' => $subPago['tipo_pago'],
+                        'total_pagado' => $subPago['monto'],
+                        'cliente_ci' => $validated['cliente_ci'],
+                        'pago_mixto_id' => $pago->id,
+                    ]);
+                }
+            }
+
+            $cliente = Cliente::where('ci', $validated['cliente_ci'])->firstOrFail();
+
+            $venta = Venta::create([
+                'fecha_venta' => now()->toDateString(),
+                'suma_total' => $total,
+                'cliente_id' => $cliente->id,
+                'pago_id' => $pago->id,
+                'detalles' => 'Venta desde API',
+            ]);
+
+            VentaDetalle::create([
+                'id_producto' => $validated['producto_id'],
+                'id_venta' => $venta->id,
+                'precio' => $validated['precio'],
+                'cantidad' => $validated['cantidad'],
+            ]);
+
+            $producto->stock -= $validated['cantidad'];
+            $producto->save();
+
+            DB::commit();
+            return response()->json($venta->load(['cliente', 'pago']), 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Error al procesar la venta: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function updateApi(Request $request, $id): JsonResponse
+    {
+        return response()->json(['message' => 'Actualización de ventas no soportada via API'], 405);
+    }
+
+    public function destroyApi($id): JsonResponse
+    {
+        try {
+            DB::transaction(function () use ($id) {
+                $venta = Venta::with(['ventaProductos.producto', 'pago'])->findOrFail($id);
+                foreach ($venta->ventaProductos as $detalle) {
+                    if ($detalle->producto) {
+                        $detalle->producto->stock += $detalle->cantidad;
+                        $detalle->producto->save();
+                    }
+                }
+                $otrasVentas = Venta::where('pago_id', $venta->pago_id)->where('id', '!=', $venta->id)->exists();
+                if (!$otrasVentas && $venta->pago) {
+                    $venta->pago->delete();
+                }
+                $venta->delete();
+            });
+            return response()->json(['message' => 'Venta eliminada exitosamente']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error al eliminar la venta'], 500);
+        }
+    }
+
+    public function ventasPorClienteApi($clienteCi): JsonResponse
+    {
+        $cliente = Cliente::where('ci', $clienteCi)->firstOrFail();
+        $ventas = Venta::with(['pago', 'ventaProductos.producto'])
+            ->where('cliente_id', $cliente->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+        return response()->json($ventas);
+    }
+
+    public function ventasPorProductoApi($productoId): JsonResponse
+    {
+        $producto = Producto::findOrFail($productoId);
+        $ventas = Venta::with(['cliente', 'pago', 'ventaProductos.producto'])
+            ->whereHas('ventaProductos', function ($query) use ($productoId) {
+                $query->where('id_producto', $productoId);
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+        return response()->json($ventas);
     }
 }
