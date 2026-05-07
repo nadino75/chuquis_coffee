@@ -139,8 +139,8 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header bg-warning">
-                        <h5 class="modal-title"><i class="fas fa-edit"></i> Editar Relación</h5>
-                        <button type="button" class="close" @click="closeEditModal">&times;</button>
+                        <h5 class="modal-title text-white"><i class="fas fa-edit"></i> Editar Relación</h5>
+                        <button type="button" class="close text-white" @click="closeEditModal">&times;</button>
                     </div>
                     <form @submit.prevent="updateItem">
                         <div class="modal-body">
@@ -205,7 +205,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import proveedoresProductoService from '@/services/proveedoresProducto';
-import provedorService from '@/services/proveedores';
+import proveedorService from '@/services/proveedores';
 import productoService from '@/services/productos';
 
 const items = ref({ data: [], current_page: 1, last_page: 1, from: 0, to: 0, total: 0, per_page: 10, prev_page_url: null, next_page_url: null });
@@ -251,7 +251,7 @@ function goToPage(page) {
 
 async function loadProveedores() {
     try {
-        const res = await provedorService.index({ per_page: 100 });
+        const res = await proveedorService.index({ per_page: 100 });
         proveedores.value = res.data.data || res.data || [];
     } catch (e) {
         console.error('Error loading proveedores:', e);

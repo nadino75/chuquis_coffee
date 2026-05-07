@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboards - Chuquis Coffee</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a0f0a; color: #f0d08a; padding: 20px; }
+  h1 { text-align: center; font-size: 1.5rem; margin-bottom: 8px; color: #e6c87c; }
+  .subtitle { text-align: center; color: #999; font-size: 0.85rem; margin-bottom: 24px; }
+  .dashboards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .dashboard { background: #2c1810; border-radius: 12px; border: 1px solid rgba(230,200,124,0.15); overflow: hidden; }
+  .dash-header { background: linear-gradient(135deg, #3e2723, #1a0f0a); padding: 16px; border-bottom: 2px solid #D4A742; display: flex; align-items: center; gap: 10px; }
+  .dash-header .icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #fff; }
+  .dash-header h2 { font-size: 1rem; color: #f0d08a; }
+  .dash-header .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+  .dash-body { padding: 16px; }
+  .stats-row { display: grid; gap: 8px; margin-bottom: 12px; }
+  .stats-row.s4 { grid-template-columns: repeat(2, 1fr); }
+  .stats-row.s3 { grid-template-columns: repeat(3, 1fr); }
+  .stats-row.s6 { grid-template-columns: repeat(3, 1fr); }
+  .stat { background: #1a0f0a; border-radius: 8px; padding: 12px; border-left: 3px solid #D4A742; position: relative; }
+  .stat .label { font-size: 0.65rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat .value { font-size: 1.3rem; font-weight: 700; color: #f0d08a; }
+  .stat .icon-sm { position: absolute; right: 8px; top: 8px; font-size: 0.8rem; opacity: 0.3; }
+  .stat.green { border-left-color: #2E7D32; }
+  .stat.red { border-left-color: #C62828; }
+  .stat.blue { border-left-color: #1565C0; }
+  .stat.yellow { border-left-color: #B8860B; }
+  .chart-placeholder { background: #1a0f0a; border-radius: 8px; padding: 12px; margin-bottom: 8px; min-height: 80px; display: flex; flex-direction: column; }
+  .chart-title { font-size: 0.75rem; color: #D4A742; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .chart-area { flex: 1; display: flex; align-items: flex-end; gap: 4px; padding: 4px 0; }
+  .bar { background: linear-gradient(to top, #D4A742, #e6c87c); border-radius: 4px 4px 0 0; min-width: 12px; flex: 1; opacity: 0.8; }
+  .chart-area.doughnut { justify-content: center; align-items: center; }
+  .doughnut-shape { width: 50px; height: 50px; border-radius: 50%; border: 8px solid #D4A742; border-right-color: #8B4513; border-bottom-color: #A0522D; border-left-color: #B8860B; }
+  .table-placeholder { background: #1a0f0a; border-radius: 8px; overflow: hidden; }
+  .table-placeholder .row { display: flex; padding: 6px 10px; font-size: 0.65rem; border-bottom: 1px solid rgba(230,200,124,0.1); }
+  .table-placeholder .row.header { background: rgba(230,200,124,0.1); color: #D4A742; font-weight: 600; text-transform: uppercase; }
+  .table-placeholder .row .cell { flex: 1; }
+  .alert-row { display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 0.65rem; background: #1a0f0a; border-radius: 6px; margin-bottom: 4px; }
+  .alert-row.warn { border-left: 3px solid #B8860B; }
+  .alert-row.danger { border-left: 3px solid #C62828; }
+  .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+  .quick-btn { background: #1a0f0a; border: 1px solid rgba(230,200,124,0.2); border-radius: 8px; padding: 8px; text-align: center; font-size: 0.65rem; color: #e6c87c; }
+  .quick-btn .qi { font-size: 1rem; margin-bottom: 2px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .section { margin-bottom: 8px; }
+  .section-label { font-size: 0.7rem; color: #999; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+  .trend-up { color: #4caf50; }
+  .trend-down { color: #ef5350; }
+  .role-badge-sm { font-size: 0.6rem; padding: 1px 6px; border-radius: 8px; background: rgba(212,167,66,0.2); color: #D4A742; }
+  .line-chart { display: flex; align-items: flex-end; gap: 3px; height: 40px; }
+  .line-bar { background: rgba(212,167,66,0.4); border-radius: 2px; flex: 1; }
+</style>
+</head>
+<body>
+
+<h1>Dashboards por Rol</h1>
+<p class="subtitle">Estado actual vs Propuesta de mejora</p>
+
+<div class="dashboards">
+
+  <!-- ═══════════ CAJERO ═══════════ -->
+  <div class="dashboard">
+    <div class="dash-header">
+      <div class="icon" style="background: linear-gradient(135deg,#2E7D32,#388E3C);">💰</div>
+      <div>
+        <h2>Cajero de Ventas</h2>
+        <span style="font-size:0.65rem;color:#999;">Operaciones del día</span>
+      </div>
+      <span class="badge" style="background:#2E7D32;color:#fff;">Actual ✓</span>
+    </div>
+    <div class="dash-body">
+      <div style="margin-bottom:12px;display:flex;gap:6px;">
+        <div style="background:#D4A742;color:#1a0f0a;padding:6px 14px;border-radius:8px;font-size:0.7rem;font-weight:600;">+ Nueva Venta</div>
+        <div style="background:transparent;border:1px solid #D4A742;color:#D4A742;padding:6px 14px;border-radius:8px;font-size:0.7rem;">+ Cliente</div>
+      </div>
+
+      <div class="stats-row s4">
+        <div class="stat green">
+          <div class="label">Ventas Hoy</div>
+          <div class="value">24</div>
+          <div class="icon-sm">📋</div>
+        </div>
+        <div class="stat green">
+          <div class="label">Ingresos Hoy</div>
+          <div class="value">$840</div>
+          <div class="icon-sm">💵</div>
+        </div>
+        <div class="stat blue">
+          <div class="label">Disponibles</div>
+          <div class="value">18</div>
+          <div class="icon-sm">📦</div>
+        </div>
+        <div class="stat red">
+          <div class="label">Sin Stock</div>
+          <div class="value">2</div>
+          <div class="icon-sm">⚠️</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="chart-placeholder">
+          <div class="chart-title">📊 Ventas por Hora</div>
+          <div class="chart-area">
+            <div class="bar" style="height:20%"></div><div class="bar" style="height:35%"></div>
+            <div class="bar" style="height:60%"></div><div class="bar" style="height:80%"></div>
+            <div class="bar" style="height:45%"></div><div class="bar" style="height:90%"></div>
+            <div class="bar" style="height:70%"></div><div class="bar" style="height:50%"></div>
+          </div>
+        </div>
+        <div class="chart-placeholder">
+          <div class="chart-title">💳 Pagos Hoy</div>
+          <div class="chart-area doughnut">
+            <div class="doughnut-shape"></div>
+          </div>
+          <div style="font-size:0.6rem;color:#999;text-align:center;margin-top:4px;">Efectivo 60% · QR 25% · Tarjeta 15%</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">📋 Ventas de Hoy (últimas)</div>
+        <div class="table-placeholder">
+          <div class="row header"><div class="cell">Producto</div><div class="cell">Cliente</div><div class="cell">Total</div><div class="cell">Hora</div></div>
+          <div class="row"><div class="cell">☕ Capuchino</div><div class="cell">Juan P.</div><div class="cell" style="color:#D4A742">$25</div><div class="cell">14:30</div></div>
+          <div class="row"><div class="cell">☕ Latte</div><div class="cell">María L.</div><div class="cell" style="color:#D4A742">$30</div><div class="cell">14:15</div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">⚠️ Sin Stock</div>
+        <div class="alert-row danger">
+          <span style="color:#ef5350;">✕</span> Café Molido 250g
+        </div>
+        <div class="alert-row danger">
+          <span style="color:#ef5350;">✕</span> Vasos 12oz
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ CONTADOR ═══════════ -->
+  <div class="dashboard">
+    <div class="dash-header">
+      <div class="icon" style="background: linear-gradient(135deg,#1565C0,#1976D2);">📊</div>
+      <div>
+        <h2>Contador - Ingresos</h2>
+        <span style="font-size:0.65rem;color:#999;">Análisis financiero</span>
+      </div>
+      <span class="badge" style="background:#1565C0;color:#fff;">Actual ✓</span>
+    </div>
+    <div class="dash-body">
+      <div class="stats-row s3">
+        <div class="stat green">
+          <div class="label">Ingresos Mayo</div>
+          <div class="value">$12.4k</div>
+          <div class="icon-sm">💰</div>
+        </div>
+        <div class="stat blue">
+          <div class="label">Mes Anterior</div>
+          <div class="value">$11.2k</div>
+          <div class="icon-sm">📅</div>
+        </div>
+        <div class="stat green">
+          <div class="label">Variación</div>
+          <div class="value trend-up">+10.7%</div>
+          <div class="icon-sm">📈</div>
+        </div>
+        <div class="stat yellow">
+          <div class="label">Transacciones</div>
+          <div class="value">342</div>
+          <div class="icon-sm">🧾</div>
+        </div>
+        <div class="stat">
+          <div class="label">Ticket Promedio</div>
+          <div class="value">$36.25</div>
+          <div class="icon-sm">🏷️</div>
+        </div>
+        <div class="stat green">
+          <div class="label">Total Histórico</div>
+          <div class="value">$89.3k</div>
+          <div class="icon-sm">📊</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="chart-placeholder">
+          <div class="chart-title">📊 Ingresos por Mes</div>
+          <div class="chart-area">
+            <div class="bar" style="height:55%;background:#8B4513"></div>
+            <div class="bar" style="height:65%;background:#8B4513"></div>
+            <div class="bar" style="height:48%;background:#8B4513"></div>
+            <div class="bar" style="height:72%;background:#8B4513"></div>
+            <div class="bar" style="height:85%;background:#8B4513"></div>
+            <div class="bar" style="height:95%;background:linear-gradient(to top,#D4A742,#e6c87c)"></div>
+          </div>
+          <div style="font-size:0.55rem;color:#999;text-align:center;">Dic · Ene · Feb · Mar · Abr · May</div>
+        </div>
+        <div class="chart-placeholder">
+          <div class="chart-title">💳 Ingresos por Método</div>
+          <div class="chart-area doughnut">
+            <div class="doughnut-shape" style="border-color:#D4A742 #8B4513 #A0522D #B8860B;"></div>
+          </div>
+          <div style="font-size:0.6rem;color:#999;text-align:center;margin-top:4px;">Efectivo 45% · QR 30% · Tarjeta 15% · Transf 10%</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="chart-placeholder">
+          <div class="chart-title">🏷️ Ingresos por Categoría</div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+            <div style="display:flex;align-items:center;gap:6px;font-size:0.65rem;">
+              <div style="width:60px;height:6px;background:#D4A742;border-radius:3px;"></div>
+              <span style="color:#999;width:60px;">Cafés</span>
+              <span style="color:#f0d08a;">$4,200</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:0.65rem;">
+              <div style="width:45px;height:6px;background:#A0522D;border-radius:3px;"></div>
+              <span style="color:#999;width:60px;">Postres</span>
+              <span style="color:#f0d08a;">$2,800</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:0.65rem;">
+              <div style="width:30px;height:6px;background:#8B4513;border-radius:3px;"></div>
+              <span style="color:#999;width:60px;">Bebidas</span>
+              <span style="color:#f0d08a;">$1,500</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:0.65rem;">
+              <div style="width:18px;height:6px;background:#3e2723;border-radius:3px;"></div>
+              <span style="color:#999;width:60px;">Otros</span>
+              <span style="color:#f0d08a;">$900</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-placeholder">
+          <div class="chart-title">📈 Tendencia del Mes</div>
+          <div class="chart-area" style="align-items:flex-end;">
+            <div class="bar" style="height:40%;background:rgba(212,167,66,0.3);border-radius:2px;"></div>
+            <div class="bar" style="height:55%;background:rgba(212,167,66,0.3);border-radius:2px;"></div>
+            <div class="bar" style="height:35%;background:rgba(212,167,66,0.3);border-radius:2px;"></div>
+            <div class="bar" style="height:70%;background:rgba(212,167,66,0.3);border-radius:2px;"></div>
+            <div class="bar" style="height:60%;background:rgba(212,167,66,0.3);border-radius:2px;"></div>
+            <div class="bar" style="height:85%;background:rgba(212,167,66,0.3);border-radius:2px;"></div>
+            <div class="bar" style="height:90%;background:rgba(212,167,66,0.3);border-radius:2px;"></div>
+          </div>
+          <div style="font-size:0.55rem;color:#999;text-align:center;">1 · 5 · 10 · 15 · 20 · 25 · 30</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ GERENTE ═══════════ -->
+  <div class="dashboard">
+    <div class="dash-header">
+      <div class="icon" style="background: linear-gradient(135deg,#B8860B,#DAA520);">👔</div>
+      <div>
+        <h2>Gerente - Roles</h2>
+        <span style="font-size:0.65rem;color:#999;">Gestión de permisos y asignaciones</span>
+      </div>
+      <span class="badge" style="background:#B8860B;color:#fff;">PROPUESTA</span>
+    </div>
+    <div class="dash-body">
+      <div class="quick-actions">
+        <div class="quick-btn"><div class="qi">👥</div>Usuarios</div>
+        <div class="quick-btn"><div class="qi">🛡️</div>Roles</div>
+        <div class="quick-btn"><div class="qi">📊</div>Reportes</div>
+      </div>
+
+      <div class="stats-row s3">
+        <div class="stat">
+          <div class="label">Total Usuarios</div>
+          <div class="value">6</div>
+          <div class="icon-sm">👤</div>
+        </div>
+        <div class="stat blue">
+          <div class="label">Roles Activos</div>
+          <div class="value">6</div>
+          <div class="icon-sm">🛡️</div>
+        </div>
+        <div class="stat green">
+          <div class="label">Permisos</div>
+          <div class="value">28</div>
+          <div class="icon-sm">🔑</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">🛡️ Asignación de Roles</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <!-- Admin -->
+          <div style="background:#1a0f0a;border-radius:8px;padding:8px 10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:0.75rem;color:#f0d08a;font-weight:600;">👑 Admin</span>
+              <span class="role-badge-sm">1 usuario · 28 permisos</span>
+            </div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap;">
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(46,125,50,0.2);color:#4caf50;border-radius:3px;">ver-usuario</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(46,125,50,0.2);color:#4caf50;border-radius:3px;">crear-usuario</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(46,125,50,0.2);color:#4caf50;border-radius:3px;">+ 26 más</span>
+            </div>
+          </div>
+          <!-- Gerente -->
+          <div style="background:#1a0f0a;border-radius:8px;padding:8px 10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:0.75rem;color:#e6c87c;font-weight:600;">👔 Gerente</span>
+              <span class="role-badge-sm">1 usuario · 22 permisos</span>
+            </div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap;">
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(212,167,66,0.2);color:#D4A742;border-radius:3px;">ver-venta</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(212,167,66,0.2);color:#D4A742;border-radius:3px;">crear-venta</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(212,167,66,0.2);color:#D4A742;border-radius:3px;">+ 20 más</span>
+            </div>
+          </div>
+          <!-- Ventas -->
+          <div style="background:#1a0f0a;border-radius:8px;padding:8px 10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:0.75rem;color:#DEB887;font-weight:600;">🛒 Ventas</span>
+              <span class="role-badge-sm">1 usuario · 20 permisos</span>
+            </div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap;">
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(139,69,19,0.2);color:#CD853F;border-radius:3px;">ver-venta</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(139,69,19,0.2);color:#CD853F;border-radius:3px;">crear-cliente</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(139,69,19,0.2);color:#CD853F;border-radius:3px;">+ 18 más</span>
+            </div>
+          </div>
+          <!-- Cajero -->
+          <div style="background:#1a0f0a;border-radius:8px;padding:8px 10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:0.75rem;color:#DEB887;font-weight:600;">💰 Cajero</span>
+              <span class="role-badge-sm">1 usuario · 8 permisos</span>
+            </div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap;">
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(212,167,66,0.15);color:#B8860B;border-radius:3px;">ver-producto</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(212,167,66,0.15);color:#B8860B;border-radius:3px;">crear-venta</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(212,167,66,0.15);color:#B8860B;border-radius:3px;">+ 6 más</span>
+            </div>
+          </div>
+          <!-- Contador -->
+          <div style="background:#1a0f0a;border-radius:8px;padding:8px 10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:0.75rem;color:#90caf9;font-weight:600;">📊 Contador</span>
+              <span class="role-badge-sm">1 usuario · 10 permisos</span>
+            </div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap;">
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(21,101,192,0.2);color:#64b5f6;border-radius:3px;">ver-venta</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(21,101,192,0.2);color:#64b5f6;border-radius:3px;">ver-pago</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(21,101,192,0.2);color:#64b5f6;border-radius:3px;">+ 8 más (solo lectura)</span>
+            </div>
+          </div>
+          <!-- Vistas -->
+          <div style="background:#1a0f0a;border-radius:8px;padding:8px 10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:0.75rem;color:#999;font-weight:600;">👁️ Vistas</span>
+              <span class="role-badge-sm">1 usuario · 10 permisos</span>
+            </div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap;">
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(158,158,158,0.15);color:#999;border-radius:3px;">ver-cliente</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(158,158,158,0.15);color:#999;border-radius:3px;">ver-venta</span>
+              <span style="font-size:0.55rem;padding:1px 5px;background:rgba(158,158,158,0.15);color:#999;border-radius:3px;">solo lectura</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section" style="margin-top:8px;">
+        <div class="section-label">📋 Matriz de Permisos por Rol</div>
+        <div class="table-placeholder">
+          <div class="row header">
+            <div class="cell" style="flex:1.5;">Permiso</div>
+            <div class="cell">👑</div>
+            <div class="cell">👔</div>
+            <div class="cell">🛒</div>
+            <div class="cell">💰</div>
+            <div class="cell">📊</div>
+            <div class="cell">👁️</div>
+          </div>
+          <div class="row"><div class="cell" style="flex:1.5;">ver-venta</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div></div>
+          <div class="row"><div class="cell" style="flex:1.5;">crear-venta</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#999;">✕</div><div class="cell" style="text-align:center;color:#999;">✕</div></div>
+          <div class="row"><div class="cell" style="flex:1.5;">borrar-venta</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#999;">✕</div><div class="cell" style="text-align:center;color:#999;">✕</div><div class="cell" style="text-align:center;color:#999;">✕</div></div>
+          <div class="row"><div class="cell" style="flex:1.5;">ver-usuario</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div><div class="cell" style="text-align:center;color:#999;">✕</div><div class="cell" style="text-align:center;color:#999;">✕</div><div class="cell" style="text-align:center;color:#999;">✕</div><div class="cell" style="text-align:center;color:#4caf50;">✓</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

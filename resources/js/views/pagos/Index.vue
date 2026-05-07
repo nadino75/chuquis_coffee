@@ -45,7 +45,7 @@
                                 <td>{{ (items.current_page - 1) * items.per_page + index + 1 }}</td>
                                 <td>{{ item.recibo }}</td>
                                 <td>{{ formatDate(item.fecha) }}</td>
-                                <td>{{ (item.tipo_pago || '').charAt(0).toUpperCase() + (item.tipo_pago || '').slice(1) }}</td>
+                                <td><span class="badge" :class="pagoBadgeClass(item.tipo_pago)">{{ capitalize(item.tipo_pago) }}</span></td>
                                 <td>${{ item.total_pagado || 0 }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
@@ -146,8 +146,8 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header bg-warning">
-                        <h5 class="modal-title"><i class="fas fa-edit"></i> Editar Pago</h5>
-                        <button type="button" class="close" @click="closeEditModal">&times;</button>
+                        <h5 class="modal-title text-white"><i class="fas fa-edit"></i> Editar Pago</h5>
+                        <button type="button" class="close text-white" @click="closeEditModal">&times;</button>
                     </div>
                     <form @submit.prevent="updateItem">
                         <div class="modal-body">
@@ -240,6 +240,16 @@ const visiblePages = computed(() => {
     for (let i = start; i <= end; i++) pages.push(i);
     return pages;
 });
+
+function capitalize(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function pagoBadgeClass(tipo) {
+    const map = { efectivo: 'badge-success', tarjeta: 'badge-info', transferencia: 'badge-warning', qr: 'badge-primary', mixto: 'badge-mixto' };
+    return map[tipo] || 'badge-secondary';
+}
 
 function formatDate(d) {
     if (!d) return '-';
@@ -352,4 +362,9 @@ onMounted(() => loadItems());
 .form-control { border-radius: 8px; }
 .btn-group .btn { margin: 0 2px; }
 .invalid-feedback { display: block; }
+.badge-mixto {
+    background: linear-gradient(135deg, #daa520, #b8860b);
+    color: #1a1a1a;
+    font-weight: 600;
+}
 </style>

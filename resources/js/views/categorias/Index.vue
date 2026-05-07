@@ -126,8 +126,8 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header bg-warning">
-                        <h5 class="modal-title"><i class="fas fa-edit"></i> Editar Categoría</h5>
-                        <button type="button" class="close" @click="closeEditModal">&times;</button>
+                        <h5 class="modal-title text-white"><i class="fas fa-edit"></i> Editar Categoría</h5>
+                        <button type="button" class="close text-white" @click="closeEditModal">&times;</button>
                     </div>
                     <form @submit.prevent="updateItem">
                         <div class="modal-body">

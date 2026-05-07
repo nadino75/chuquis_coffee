@@ -162,8 +162,8 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header bg-warning">
-                        <h5 class="modal-title"><i class="fas fa-edit"></i> Editar Proveedor</h5>
-                        <button type="button" class="close" @click="closeEditModal">&times;</button>
+                        <h5 class="modal-title text-white"><i class="fas fa-edit"></i> Editar Proveedor</h5>
+                        <button type="button" class="close text-white" @click="closeEditModal">&times;</button>
                     </div>
                     <form @submit.prevent="updateItem">
                         <div class="modal-body">
@@ -251,7 +251,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import provedorService from '@/services/proveedores';
+import proveedorService from '@/services/proveedores';
 
 const items = ref({ data: [], current_page: 1, last_page: 1, from: 0, to: 0, total: 0, per_page: 10, prev_page_url: null, next_page_url: null });
 const loading = ref(false);
@@ -278,7 +278,7 @@ const visiblePages = computed(() => {
 async function loadItems(page = 1) {
     loading.value = true;
     try {
-        const res = await provedorService.index({ page, search: search.value });
+        const res = await proveedorService.index({ page, search: search.value });
         items.value = res.data;
         currentPage.value = page;
     } catch (e) {
@@ -311,7 +311,7 @@ async function createItem() {
     loading.value = true;
     Object.keys(formErrors).forEach(k => delete formErrors[k]);
     try {
-        await provedorService.store(createForm);
+        await proveedorService.store(createForm);
         success.value = 'Registro creado exitosamente';
         closeCreateModal();
         loadItems(currentPage.value);
@@ -343,7 +343,7 @@ async function updateItem() {
     loading.value = true;
     Object.keys(formErrors).forEach(k => delete formErrors[k]);
     try {
-        await provedorService.update(currentItem.value.id, editForm);
+        await proveedorService.update(currentItem.value.id, editForm);
         success.value = 'Registro actualizado exitosamente';
         closeEditModal();
         loadItems(currentPage.value);
@@ -367,7 +367,7 @@ function closeViewModal() {
 async function deleteItem(item) {
     if (!confirm('¿Está seguro de eliminar este registro?')) return;
     try {
-        await provedorService.destroy(item.id);
+        await proveedorService.destroy(item.id);
         success.value = 'Registro eliminado exitosamente';
         loadItems(currentPage.value);
     } catch (e) {

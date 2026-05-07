@@ -1,3 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Manrope:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* ISO-compliant contrast ratios (WCAG AA 4.5:1 for normal text, 3:1 for large) */
+  --coffee-bg-deep: #1a0f0a;
+  --coffee-bg-card: #2c1810;
+  --coffee-bg-elevated: #3c2820;
+  --coffee-text-primary: #ffffff;
+  --coffee-text-secondary: rgba(255, 255, 255, 0.85);
+  --coffee-text-muted: rgba(255, 255, 255, 0.65);
+  --coffee-gold: #e6c87c;
+  --coffee-gold-bright: #f0d08a;
+  --coffee-gold-dim: #b8860b;
+  --coffee-accent: #D4A742;
+  --coffee-border: rgba(230, 200, 124, 0.2);
+  --coffee-border-hover: rgba(230, 200, 124, 0.4);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  background-color: var(--coffee-bg-deep);
+  color: var(--coffee-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus-visible for keyboard accessibility (ISO 9241) */
+:focus-visible {
+  outline: 2px solid var(--coffee-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip navigation for screen readers */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: var(--coffee-gold);
+  color: var(--coffee-bg-deep);
+  font-weight: 600;
+  border-radius: 8px;
+  transition: top 0.3s ease;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--coffee-bg-deep);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--coffee-bg-elevated);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--coffee-gold-dim);
+}

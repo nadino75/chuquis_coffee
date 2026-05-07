@@ -30,6 +30,9 @@ class DatabaseSeeder extends Seeder
             UserGerenteSeeder::class,
             UserVentasSeeder::class,
             UserVistasSeeder::class,
+            CajeroContadorSeeder::class,
+            UserCajeroSeeder::class,
+            UserContadorSeeder::class,
         ]);
         /* User::factory()->create([
             'name' => 'Test User',

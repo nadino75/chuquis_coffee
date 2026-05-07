@@ -19,6 +19,15 @@
                 </button>
             </div>
             <div class="card-body">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" v-model="search" placeholder="Buscar usuario..." @keyup.enter="loadItems(1)">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" @click="loadItems(1)">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-bordered table-hover table-striped">
                         <thead class="thead-dark">
@@ -31,22 +40,29 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(item, idx) in items.data" :key="item.id" class="text-center">
-                                <td>{{ (items.current_page - 1) * (items.per_page || 10) + idx + 1 }}</td>
+                            <tr v-for="(item, index) in items.data" :key="item.id" class="text-center">
+                                <td>{{ (items.current_page - 1) * items.per_page + index + 1 }}</td>
                                 <td>{{ item.name }}</td>
                                 <td>{{ item.email }}</td>
                                 <td>{{ item.roles?.map(r => r.name).join(', ') || '-' }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <button class="btn btn-info btn-sm" title="Ver" @click="showItem(item)"><i class="fas fa-eye"></i></button>
-                                        <button class="btn btn-warning btn-sm" title="Editar" @click="openEditModal(item)"><i class="fas fa-edit"></i></button>
-                                        <button class="btn btn-danger btn-sm" title="Eliminar" @click="deleteItem(item)"><i class="fas fa-trash"></i></button>
+                                        <button class="btn btn-info btn-sm" title="Ver" @click="showItem(item)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" title="Editar" @click="openEditModal(item)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" title="Eliminar" @click="deleteItem(item)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
                             <tr v-if="!items.data?.length">
                                 <td colspan="5" class="text-center text-muted py-4">
-                                    <i class="fas fa-user-cog fa-2x mb-2"></i><br>No hay registros
+                                    <i class="fas fa-user-cog fa-2x mb-2"></i><br>
+                                    No hay registros
                                 </td>
                             </tr>
                         </tbody>
@@ -124,8 +140,8 @@
         <div class="modal fade" :class="{ show: showEdit, dBlock: showEdit }" tabindex="-1" style="background: rgba(0,0,0,0.5);" v-if="showEdit">
             <div class="modal-dialog"><div class="modal-content">
                 <div class="modal-header bg-warning">
-                    <h5 class="modal-title"><i class="fas fa-edit"></i> Editar Usuario</h5>
-                    <button type="button" class="close" @click="closeEditModal">&times;</button>
+                    <h5 class="modal-title text-white"><i class="fas fa-edit"></i> Editar Usuario</h5>
+                    <button type="button" class="close text-white" @click="closeEditModal">&times;</button>
                 </div>
                 <form @submit.prevent="updateItem">
                     <div class="modal-body">
@@ -214,10 +230,11 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import userService from '@/services/users';
 
-const items = ref({ data: [], current_page: 1, last_page: 1, from: 0, to: 0, total: 0, prev_page_url: null, next_page_url: null });
+const items = ref({ data: [], current_page: 1, last_page: 1, from: 0, to: 0, total: 0, per_page: 10, prev_page_url: null, next_page_url: null });
 const loading = ref(false);
 const success = ref('');
 const error = ref('');
+const search = ref('');
 const showCreate = ref(false);
 const showEdit = ref(false);
 const showView = ref(false);
@@ -244,7 +261,7 @@ function formatDate(dateStr) {
 async function loadItems(page = 1) {
     loading.value = true;
     try {
-        const res = await userService.index({ page });
+        const res = await userService.index({ page, search: search.value });
         items.value = res.data;
         currentPage.value = page;
     } catch (e) { error.value = 'Error al cargar los datos'; }
