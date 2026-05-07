@@ -14,7 +14,7 @@
                 <h5 class="card-title mb-0 text-white flex-grow-1">
                     <i class="fas fa-truck mr-1"></i> Lista de Proveedores
                 </h5>
-                <button type="button" class="btn btn-light btn-sm" @click="openCreateModal">
+                <button v-if="hasPermission('crear-proveedor')" type="button" class="btn btn-light btn-sm" @click="openCreateModal">
                     <i class="fas fa-plus-circle mr-1"></i> Nuevo Proveedor
                 </button>
             </div>
@@ -52,10 +52,10 @@
                                         <button class="btn btn-info btn-sm" title="Ver" @click="showItem(item)">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <button class="btn btn-warning btn-sm" title="Editar" @click="openEditModal(item)">
+                                        <button v-if="hasPermission('editar-proveedor')" class="btn btn-warning btn-sm" title="Editar" @click="openEditModal(item)">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button class="btn btn-danger btn-sm" title="Eliminar" @click="deleteItem(item)">
+                                        <button v-if="hasPermission('borrar-proveedor')" class="btn btn-danger btn-sm" title="Eliminar" @click="deleteItem(item)">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -252,12 +252,28 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import proveedorService from '@/services/proveedores';
+import axios from 'axios';
 
 const items = ref({ data: [], current_page: 1, last_page: 1, from: 0, to: 0, total: 0, per_page: 10, prev_page_url: null, next_page_url: null });
 const loading = ref(false);
 const success = ref('');
 const error = ref('');
 const search = ref('');
+const userPermissions = ref([]);
+
+function hasPermission(name) {
+    return userPermissions.value.includes(name);
+}
+
+async function loadUserPermissions() {
+    try {
+        const res = await axios.get('/api/user');
+        const perms = res.data?.roles?.flatMap(r => r.permissions?.map(p => p.name) || []) || [];
+        userPermissions.value = perms;
+    } catch (e) {
+        console.error('Error loading permissions:', e);
+    }
+}
 const showCreate = ref(false);
 const showEdit = ref(false);
 const showView = ref(false);
@@ -375,7 +391,10 @@ async function deleteItem(item) {
     }
 }
 
-onMounted(() => loadItems());
+onMounted(() => {
+    loadUserPermissions();
+    loadItems();
+});
 </script>
 
 <style scoped>

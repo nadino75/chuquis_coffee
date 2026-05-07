@@ -15,6 +15,30 @@ use PDF;
 
 class ReporteController extends Controller
 {
+    public function indexApi(Request $request)
+    {
+        $fechaInicio = $request->get('fecha_inicio', now()->subDays(30)->format('Y-m-d'));
+        $fechaFin = $request->get('fecha_fin', now()->format('Y-m-d'));
+
+        $totalVentas = Venta::count();
+        $ingresosMes = Venta::whereMonth('fecha_venta', now()->month)->sum('suma_total');
+        $topProducto = optional(Producto::join('venta_productos', 'productos.id', '=', 'venta_productos.id_producto')
+            ->selectRaw('productos.nombre, SUM(venta_productos.cantidad) as total')
+            ->groupBy('productos.id', 'productos.nombre')
+            ->orderBy('total', 'desc')
+            ->first())->nombre ?? '-';
+        $stockBajo = Producto::where('stock', '<', 10)->count();
+
+        return response()->json([
+            'stats' => [
+                'total_ventas' => $totalVentas,
+                'ingresos_mes' => $ingresosMes,
+                'top_producto' => $topProducto,
+                'stock_bajo' => $stockBajo,
+            ]
+        ]);
+    }
+
     public function index(Request $request)
     {
         $fechaInicio = $request->get('fecha_inicio', now()->subDays(30)->format('Y-m-d'));

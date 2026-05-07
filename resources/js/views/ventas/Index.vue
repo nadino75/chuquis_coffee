@@ -54,10 +54,10 @@
                                         <button class="btn btn-info btn-sm" title="Ver" @click="showItem(item)">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <button class="btn btn-warning btn-sm" title="Editar" @click="openEditModal(item)">
+                                        <button v-if="hasPermission('editar-venta')" class="btn btn-warning btn-sm" title="Editar" @click="openEditModal(item)">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button class="btn btn-danger btn-sm" title="Eliminar" @click="deleteItem(item)">
+                                        <button v-if="hasPermission('borrar-venta')" class="btn btn-danger btn-sm" title="Eliminar" @click="deleteItem(item)">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -511,12 +511,28 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import ventaService from '@/services/ventas';
 import clienteService from '@/services/clientes';
 import productoService from '@/services/productos';
+import axios from 'axios';
 
 const items = ref({ data: [], current_page: 1, last_page: 1, from: 0, to: 0, total: 0, per_page: 10, prev_page_url: null, next_page_url: null });
 const loading = ref(false);
 const success = ref('');
 const error = ref('');
 const search = ref('');
+const userPermissions = ref([]);
+
+function hasPermission(name) {
+    return userPermissions.value.includes(name);
+}
+
+async function loadUserPermissions() {
+    try {
+        const res = await axios.get('/api/user');
+        const perms = res.data?.roles?.flatMap(r => r.permissions?.map(p => p.name) || []) || [];
+        userPermissions.value = perms;
+    } catch (e) {
+        console.error('Error loading permissions:', e);
+    }
+}
 const productoSearch = ref('');
 const showProductGrid = ref(false);
 const showCreate = ref(false);
@@ -800,6 +816,7 @@ async function deleteItem(item) {
 }
 
 onMounted(() => {
+    loadUserPermissions();
     loadItems();
     loadClientes();
     loadProductos();

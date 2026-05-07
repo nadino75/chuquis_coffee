@@ -14,7 +14,7 @@
                 <h5 class="card-title mb-0 text-white flex-grow-1">
                     <i class="fas fa-box mr-1"></i> Lista de Productos
                 </h5>
-                <button type="button" class="btn btn-light btn-sm" @click="openCreateModal">
+                <button v-if="hasPermission('crear-producto')" type="button" class="btn btn-light btn-sm" @click="openCreateModal">
                     <i class="fas fa-plus-circle mr-1"></i> Nuevo Producto
                 </button>
             </div>
@@ -45,17 +45,17 @@
                                 <td>{{ (items.current_page - 1) * items.per_page + index + 1 }}</td>
                                 <td>{{ item.nombre }}</td>
                                 <td>{{ item.stock }}</td>
-                                <td>${{ item.precio }}</td>
+                                <td>Bs. {{ Number(item.precio).toLocaleString('es-ES', {minimumFractionDigits: 2}) }}</td>
                                 <td>{{ item.categoria?.nombre || '-' }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
                                         <button class="btn btn-info btn-sm" title="Ver" @click="showItem(item)">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <button class="btn btn-warning btn-sm" title="Editar" @click="openEditModal(item)">
+                                        <button v-if="hasPermission('editar-producto')" class="btn btn-warning btn-sm" title="Editar" @click="openEditModal(item)">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button class="btn btn-danger btn-sm" title="Eliminar" @click="deleteItem(item)">
+                                        <button v-if="hasPermission('borrar-producto')" class="btn btn-danger btn-sm" title="Eliminar" @click="deleteItem(item)">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -95,7 +95,7 @@
         <!-- Create Modal -->
         <div class="modal fade" :class="{ show: showCreate, dBlock: showCreate }" tabindex="-1" style="background: rgba(0,0,0,0.5);" v-if="showCreate">
             <div class="modal-dialog">
-                <div class="modal-content">
+                <div class="modal-content modal-content--scroll">
                     <div class="modal-header bg-primary">
                         <h5 class="modal-title text-white"><i class="fas fa-plus"></i> Nuevo Producto</h5>
                         <button type="button" class="close text-white" @click="closeCreateModal">&times;</button>
@@ -109,12 +109,18 @@
                             </div>
                             <div class="form-group">
                                 <label>Stock <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.stock }" v-model="createForm.stock" required min="0">
+                                <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.stock }" v-model.number="createForm.stock" required min="0">
                                 <div class="invalid-feedback" v-if="formErrors.stock">{{ formErrors.stock[0] }}</div>
                             </div>
                             <div class="form-group">
+                                <label>Stock Mínimo</label>
+                                <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.stock_minimo }" v-model.number="createForm.stock_minimo" min="0">
+                                <small class="form-text text-muted">Alerta cuando el stock baje de esta cantidad (default: 5)</small>
+                                <div class="invalid-feedback" v-if="formErrors.stock_minimo">{{ formErrors.stock_minimo[0] }}</div>
+                            </div>
+                            <div class="form-group">
                                 <label>Precio <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.precio }" v-model="createForm.precio" required step="0.01" min="0">
+                                <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.precio }" v-model.number="createForm.precio" required step="0.01" min="0">
                                 <div class="invalid-feedback" v-if="formErrors.precio">{{ formErrors.precio[0] }}</div>
                             </div>
                             <div class="form-group">
@@ -135,7 +141,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Descripción</label>
-                                <textarea class="form-control" :class="{ 'is-invalid': formErrors.descripcion }" v-model="createForm.descripcion" rows="3"></textarea>
+                                <textarea class="form-control" :class="{ 'is-invalid': formErrors.descripcion }" v-model="createForm.descripcion"></textarea>
                                 <div class="invalid-feedback" v-if="formErrors.descripcion">{{ formErrors.descripcion[0] }}</div>
                             </div>
                         </div>
@@ -154,7 +160,7 @@
         <!-- Edit Modal -->
         <div class="modal fade" :class="{ show: showEdit, dBlock: showEdit }" tabindex="-1" style="background: rgba(0,0,0,0.5);" v-if="showEdit">
             <div class="modal-dialog">
-                <div class="modal-content">
+                <div class="modal-content modal-content--scroll">
                     <div class="modal-header bg-warning">
                         <h5 class="modal-title text-white"><i class="fas fa-edit"></i> Editar Producto</h5>
                         <button type="button" class="close text-white" @click="closeEditModal">&times;</button>
@@ -168,12 +174,18 @@
                             </div>
                             <div class="form-group">
                                 <label>Stock <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.stock }" v-model="editForm.stock" required min="0">
+                                <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.stock }" v-model.number="editForm.stock" required min="0">
                                 <div class="invalid-feedback" v-if="formErrors.stock">{{ formErrors.stock[0] }}</div>
                             </div>
                             <div class="form-group">
+                                <label>Stock Mínimo</label>
+                                <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.stock_minimo }" v-model.number="editForm.stock_minimo" min="0">
+                                <small class="form-text text-muted">Alerta cuando el stock baje de esta cantidad</small>
+                                <div class="invalid-feedback" v-if="formErrors.stock_minimo">{{ formErrors.stock_minimo[0] }}</div>
+                            </div>
+                            <div class="form-group">
                                 <label>Precio <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.precio }" v-model="editForm.precio" required step="0.01" min="0">
+                                <input type="number" class="form-control" :class="{ 'is-invalid': formErrors.precio }" v-model.number="editForm.precio" required step="0.01" min="0">
                                 <div class="invalid-feedback" v-if="formErrors.precio">{{ formErrors.precio[0] }}</div>
                             </div>
                             <div class="form-group">
@@ -194,7 +206,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Descripción</label>
-                                <textarea class="form-control" :class="{ 'is-invalid': formErrors.descripcion }" v-model="editForm.descripcion" rows="3"></textarea>
+                                <textarea class="form-control" :class="{ 'is-invalid': formErrors.descripcion }" v-model="editForm.descripcion"></textarea>
                                 <div class="invalid-feedback" v-if="formErrors.descripcion">{{ formErrors.descripcion[0] }}</div>
                             </div>
                         </div>
@@ -222,7 +234,8 @@
                         <table class="table table-bordered">
                             <tr><th width="40%">Nombre</th><td>{{ currentItem.nombre }}</td></tr>
                             <tr><th>Stock</th><td>{{ currentItem.stock }}</td></tr>
-                            <tr><th>Precio</th><td>${{ currentItem.precio }}</td></tr>
+                            <tr><th>Stock Mínimo</th><td>{{ currentItem.stock_minimo || 5 }}</td></tr>
+                            <tr><th>Precio</th><td>Bs. {{ Number(currentItem.precio).toLocaleString('es-ES', {minimumFractionDigits: 2}) }}</td></tr>
                             <tr><th>Categoría</th><td>{{ currentItem.categoria?.nombre || '-' }}</td></tr>
                             <tr><th>Marca</th><td>{{ currentItem.marca?.nombre || '-' }}</td></tr>
                             <tr><th>Descripción</th><td>{{ currentItem.descripcion || '-' }}</td></tr>
@@ -242,12 +255,28 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import productoService from '@/services/productos';
 import categoriaService from '@/services/categorias';
 import marcaService from '@/services/marcas';
+import axios from 'axios';
 
 const items = ref({ data: [], current_page: 1, last_page: 1, from: 0, to: 0, total: 0, per_page: 10, prev_page_url: null, next_page_url: null });
 const loading = ref(false);
 const success = ref('');
 const error = ref('');
 const search = ref('');
+const userPermissions = ref([]);
+
+function hasPermission(name) {
+    return userPermissions.value.includes(name);
+}
+
+async function loadUserPermissions() {
+    try {
+        const res = await axios.get('/api/user');
+        const perms = res.data?.roles?.flatMap(r => r.permissions?.map(p => p.name) || []) || [];
+        userPermissions.value = perms;
+    } catch (e) {
+        console.error('Error loading permissions:', e);
+    }
+}
 const showCreate = ref(false);
 const showEdit = ref(false);
 const showView = ref(false);
@@ -255,8 +284,8 @@ const currentItem = ref(null);
 const currentPage = ref(1);
 const categorias = ref([]);
 const marcas = ref([]);
-const createForm = reactive({ nombre: '', stock: '', precio: '', categoria_id: '', marca_id: '', descripcion: '' });
-const editForm = reactive({ nombre: '', stock: '', precio: '', categoria_id: '', marca_id: '', descripcion: '' });
+const createForm = reactive({ nombre: '', stock: '', stock_minimo: 5, precio: '', categoria_id: '', marca_id: '', descripcion: '' });
+const editForm = reactive({ nombre: '', stock: '', stock_minimo: '', precio: '', categoria_id: '', marca_id: '', descripcion: '' });
 const formErrors = reactive({});
 
 const visiblePages = computed(() => {
@@ -305,6 +334,7 @@ async function loadMarcas() {
 function openCreateModal() {
     createForm.nombre = '';
     createForm.stock = '';
+    createForm.stock_minimo = 5;
     createForm.precio = '';
     createForm.categoria_id = '';
     createForm.marca_id = '';
@@ -327,7 +357,8 @@ async function createItem() {
         loadItems(currentPage.value);
     } catch (e) {
         if (e.response?.data?.errors) Object.assign(formErrors, e.response.data.errors);
-        else error.value = 'Error al crear el registro';
+        else if (e.response?.data?.message) error.value = e.response.data.message;
+        else error.value = 'Error al crear el registro: ' + (e.message || 'desconocido');
     } finally {
         loading.value = false;
     }
@@ -337,6 +368,7 @@ function openEditModal(item) {
     currentItem.value = { ...item };
     editForm.nombre = item.nombre || '';
     editForm.stock = item.stock || '';
+    editForm.stock_minimo = item.stock_minimo || '';
     editForm.precio = item.precio || '';
     editForm.categoria_id = item.categoria_id || '';
     editForm.marca_id = item.marca_id || '';
@@ -359,7 +391,8 @@ async function updateItem() {
         loadItems(currentPage.value);
     } catch (e) {
         if (e.response?.data?.errors) Object.assign(formErrors, e.response.data.errors);
-        else error.value = 'Error al actualizar el registro';
+        else if (e.response?.data?.message) error.value = e.response.data.message;
+        else error.value = 'Error al actualizar el registro: ' + (e.message || 'desconocido');
     } finally {
         loading.value = false;
     }
@@ -386,6 +419,7 @@ async function deleteItem(item) {
 }
 
 onMounted(() => {
+    loadUserPermissions();
     loadItems();
     loadCategorias();
     loadMarcas();
@@ -397,4 +431,13 @@ onMounted(() => {
 .form-control { border-radius: 8px; }
 .btn-group .btn { margin: 0 2px; }
 .invalid-feedback { display: block; }
+
+.modal-content--scroll {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-content--scroll textarea {
+  min-height: 80px;
+}
 </style>

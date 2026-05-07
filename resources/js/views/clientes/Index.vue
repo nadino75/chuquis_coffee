@@ -14,7 +14,7 @@
                 <h5 class="card-title mb-0 text-white flex-grow-1">
                     <i class="fas fa-users mr-1"></i> Lista de Clientes
                 </h5>
-                <button type="button" class="btn btn-light btn-sm" @click="openCreateModal">
+                <button v-if="hasPermission('crear-cliente')" type="button" class="btn btn-light btn-sm" @click="openCreateModal">
                     <i class="fas fa-plus-circle mr-1"></i> Nuevo Cliente
                 </button>
             </div>
@@ -52,10 +52,10 @@
                                         <button class="btn btn-info btn-sm" title="Ver" @click="showItem(item)">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <button class="btn btn-warning btn-sm" title="Editar" @click="openEditModal(item)">
+                                        <button v-if="hasPermission('editar-cliente')" class="btn btn-warning btn-sm" title="Editar" @click="openEditModal(item)">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button class="btn btn-danger btn-sm" title="Eliminar" @click="deleteItem(item)">
+                                        <button v-if="hasPermission('borrar-cliente')" class="btn btn-danger btn-sm" title="Eliminar" @click="deleteItem(item)">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -109,17 +109,17 @@
                             </div>
                             <div class="form-group">
                                 <label>Nombres <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.nombres }" v-model="createForm.nombres" required>
+                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.nombres }" v-model="createForm.nombres" required @input="createForm.nombres = $event.target.value.toUpperCase()">
                                 <div class="invalid-feedback" v-if="formErrors.nombres">{{ formErrors.nombres[0] }}</div>
                             </div>
                             <div class="form-group">
                                 <label>Apellido Paterno <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.apellido_paterno }" v-model="createForm.apellido_paterno" required>
+                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.apellido_paterno }" v-model="createForm.apellido_paterno" required @input="createForm.apellido_paterno = $event.target.value.toUpperCase()">
                                 <div class="invalid-feedback" v-if="formErrors.apellido_paterno">{{ formErrors.apellido_paterno[0] }}</div>
                             </div>
                             <div class="form-group">
                                 <label>Apellido Materno</label>
-                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.apellido_materno }" v-model="createForm.apellido_materno">
+                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.apellido_materno }" v-model="createForm.apellido_materno" @input="createForm.apellido_materno = $event.target.value.toUpperCase()">
                                 <div class="invalid-feedback" v-if="formErrors.apellido_materno">{{ formErrors.apellido_materno[0] }}</div>
                             </div>
                             <div class="form-group">
@@ -162,17 +162,17 @@
                             </div>
                             <div class="form-group">
                                 <label>Nombres <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.nombres }" v-model="editForm.nombres" required>
+                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.nombres }" v-model="editForm.nombres" required @input="editForm.nombres = $event.target.value.toUpperCase()">
                                 <div class="invalid-feedback" v-if="formErrors.nombres">{{ formErrors.nombres[0] }}</div>
                             </div>
                             <div class="form-group">
                                 <label>Apellido Paterno <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.apellido_paterno }" v-model="editForm.apellido_paterno" required>
+                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.apellido_paterno }" v-model="editForm.apellido_paterno" required @input="editForm.apellido_paterno = $event.target.value.toUpperCase()">
                                 <div class="invalid-feedback" v-if="formErrors.apellido_paterno">{{ formErrors.apellido_paterno[0] }}</div>
                             </div>
                             <div class="form-group">
                                 <label>Apellido Materno</label>
-                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.apellido_materno }" v-model="editForm.apellido_materno">
+                                <input type="text" class="form-control" :class="{ 'is-invalid': formErrors.apellido_materno }" v-model="editForm.apellido_materno" @input="editForm.apellido_materno = $event.target.value.toUpperCase()">
                                 <div class="invalid-feedback" v-if="formErrors.apellido_materno">{{ formErrors.apellido_materno[0] }}</div>
                             </div>
                             <div class="form-group">
@@ -228,12 +228,28 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import clienteService from '@/services/clientes';
+import axios from 'axios';
 
 const items = ref({ data: [], current_page: 1, last_page: 1, from: 0, to: 0, total: 0, per_page: 10, prev_page_url: null, next_page_url: null });
 const loading = ref(false);
 const success = ref('');
 const error = ref('');
 const search = ref('');
+const userPermissions = ref([]);
+
+function hasPermission(name) {
+    return userPermissions.value.includes(name);
+}
+
+async function loadUserPermissions() {
+    try {
+        const res = await axios.get('/api/user');
+        const perms = res.data?.roles?.flatMap(r => r.permissions?.map(p => p.name) || []) || [];
+        userPermissions.value = perms;
+    } catch (e) {
+        console.error('Error loading permissions:', e);
+    }
+}
 const showCreate = ref(false);
 const showEdit = ref(false);
 const showView = ref(false);
@@ -351,7 +367,10 @@ async function deleteItem(item) {
     }
 }
 
-onMounted(() => loadItems());
+onMounted(() => {
+    loadUserPermissions();
+    loadItems();
+});
 </script>
 
 <style scoped>

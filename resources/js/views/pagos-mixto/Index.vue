@@ -46,7 +46,7 @@
                                 <td>{{ item.recibo || '-' }}</td>
                                 <td>{{ formatDate(item.fecha) }}</td>
                                 <td>{{ (item.tipo_pago || '').charAt(0).toUpperCase() + (item.tipo_pago || '').slice(1) }}</td>
-                                <td>${{ item.monto || 0 }}</td>
+                                <td>Bs. {{ Number(item.monto || 0).toLocaleString('es-ES', {minimumFractionDigits: 2}) }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
                                         <button class="btn btn-info btn-sm" title="Ver" @click="showItem(item)">
@@ -203,7 +203,7 @@
                             <tr><th width="40%">Recibo</th><td>{{ currentItem.recibo || '-' }}</td></tr>
                             <tr><th>Fecha</th><td>{{ formatDate(currentItem.fecha) }}</td></tr>
                             <tr><th>Tipo de Pago</th><td>{{ (currentItem.tipo_pago || '').charAt(0).toUpperCase() + (currentItem.tipo_pago || '').slice(1) }}</td></tr>
-                            <tr><th>Monto</th><td>${{ currentItem.monto || 0 }}</td></tr>
+                            <tr><th>Monto</th><td>Bs. {{ Number(currentItem.monto || 0).toLocaleString('es-ES', {minimumFractionDigits: 2}) }}</td></tr>
                         </table>
                     </div>
                     <div class="modal-footer">

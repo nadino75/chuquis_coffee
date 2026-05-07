@@ -49,11 +49,15 @@ class ClienteController extends Controller
         ]);
 
         try {
-            Cliente::create($request->only([
+            $data = $request->only([
                 'ci', 'ci_complemento', 'nit', 'nombres',
                 'apellido_paterno', 'apellido_materno', 'sexo',
                 'telefono', 'celular', 'correo',
-            ]));
+            ]);
+            $data['nombres'] = strtoupper($data['nombres'] ?? '');
+            $data['apellido_paterno'] = strtoupper($data['apellido_paterno'] ?? '');
+            $data['apellido_materno'] = strtoupper($data['apellido_materno'] ?? '');
+            Cliente::create($data);
             return redirect()->route('clientes.index')
                 ->with('success', 'Cliente creado correctamente.');
                 
@@ -92,11 +96,15 @@ class ClienteController extends Controller
         ]);
 
         try {
-            $cliente->update($request->only([
+            $data = $request->only([
                 'ci', 'ci_complemento', 'nit', 'nombres',
                 'apellido_paterno', 'apellido_materno', 'sexo',
                 'telefono', 'celular', 'correo',
-            ]));
+            ]);
+            $data['nombres'] = strtoupper($data['nombres'] ?? '');
+            $data['apellido_paterno'] = strtoupper($data['apellido_paterno'] ?? '');
+            $data['apellido_materno'] = strtoupper($data['apellido_materno'] ?? '');
+            $cliente->update($data);
             return redirect()->route('clientes.index')
                 ->with('success', 'Cliente actualizado correctamente.');
                 
@@ -148,6 +156,9 @@ class ClienteController extends Controller
             'celular' => 'nullable|max:20',
             'correo' => 'required|email|max:100',
         ]);
+        $validated['nombres'] = strtoupper($validated['nombres'] ?? '');
+        $validated['apellido_paterno'] = strtoupper($validated['apellido_paterno'] ?? '');
+        $validated['apellido_materno'] = strtoupper($validated['apellido_materno'] ?? '');
         $cliente = Cliente::create($validated);
         return response()->json($cliente, 201);
     }
@@ -167,6 +178,9 @@ class ClienteController extends Controller
             'celular' => 'nullable|max:20',
             'correo' => 'required|email|max:100',
         ]);
+        $validated['nombres'] = strtoupper($validated['nombres'] ?? '');
+        $validated['apellido_paterno'] = strtoupper($validated['apellido_paterno'] ?? '');
+        $validated['apellido_materno'] = strtoupper($validated['apellido_materno'] ?? '');
         $cliente->update($validated);
         return response()->json($cliente);
     }

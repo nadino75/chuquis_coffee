@@ -44,7 +44,7 @@
                                 <td>{{ (items.current_page - 1) * items.per_page + index + 1 }}</td>
                                 <td>{{ item.proveedore?.nombre || '-' }}</td>
                                 <td>{{ item.producto?.nombre || '-' }}</td>
-                                <td>${{ item.precio }}</td>
+                                <td>Bs. {{ Number(item.precio).toLocaleString('es-ES', {minimumFractionDigits: 2}) }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
                                         <button class="btn btn-info btn-sm" title="Ver" @click="showItem(item)">
@@ -190,7 +190,7 @@
                         <table class="table table-bordered">
                             <tr><th width="40%">Proveedor</th><td>{{ currentItem.proveedore?.nombre || '-' }}</td></tr>
                             <tr><th>Producto</th><td>{{ currentItem.producto?.nombre || '-' }}</td></tr>
-                            <tr><th>Precio</th><td>${{ currentItem.precio }}</td></tr>
+                            <tr><th>Precio</th><td>Bs. {{ Number(currentItem.precio).toLocaleString('es-ES', {minimumFractionDigits: 2}) }}</td></tr>
                         </table>
                     </div>
                     <div class="modal-footer">
